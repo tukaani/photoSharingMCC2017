@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">PhotoOrganizer</string>
+    <string name="gallery">Gallery</string>
+    <string name="takePhoto">Take a photo</string>
+    <string name="groups">Groups</string>
+    <string name="settings">Settings</string>
 </resources>
