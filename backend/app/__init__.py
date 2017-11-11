@@ -9,7 +9,7 @@ from flask import Flask, request
 from flask_restful import Api, Resource
 from json import dumps
 from flask_jsonpify import jsonpify
-from app.views import ImageProcessing, HealthCheck
+from app.views import ImageProcessing, HealthCheck, Index
 
 app = Flask(__name__)
 
@@ -17,6 +17,7 @@ app = Flask(__name__)
 api = Api(app)
 
 
-# PhotoOrganizer HTTP Endpoints
+# Photo Organizer HTTP Endpoints
+api.add_resource(Index, '/')
 api.add_resource(HealthCheck, '/photoorganizer/api/v1.0/status')
 api.add_resource(ImageProcessing, '/photoorganizer/api/v1.0/process')

@@ -18,7 +18,10 @@ class ImageProcessing(Resource):
     """
 
     def get(self):
-        return json.dumps({'app': 'photoorganizer'})
+        """
+        Perform image resolution transformations
+        """
+        return json.dumps({'app': 'Photo Organizer'})
 
 
 class HealthCheck(Resource):
@@ -28,8 +31,21 @@ class HealthCheck(Resource):
 
     def get(self):
         """
+        Status of photo Organizer
         """
         status = {
             'status': HTTPStatus.OK
         }
         return json.dumps(status)
+
+
+class Index(Resource):
+    """
+    Default api
+    """
+
+    def get(self):
+        """
+        Default api
+        """
+        return jsonpify("Welcome")
