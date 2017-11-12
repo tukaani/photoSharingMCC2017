@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "196081133220",
+    "firebase_url": "https://mcc-fall-2017-g12.firebaseio.com",
+    "project_id": "mcc-fall-2017-g12",
+    "storage_bucket": "mcc-fall-2017-g12.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:196081133220:android:656e45241c5794f2",
+        "android_client_info": {
+          "package_name": "com.appspot.mccfall2017g12.photoorganizer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "196081133220-i17dij0pq835q1lrfvbv1bvevcurags8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.appspot.mccfall2017g12.photoorganizer",
+            "certificate_hash": "12a1689240d99e1fe1d8a64e1b60c99c9b7e584d"
+          }
+        },
+        {
+          "client_id": "196081133220-h3j8cffs59ho6q0pftf1ttsbq2fuquln.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDG_Q7P0fF0WnLFlWvLlawRxOPfAIgT70"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "196081133220-h3j8cffs59ho6q0pftf1ttsbq2fuquln.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
