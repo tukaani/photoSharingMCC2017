@@ -1,0 +1,20 @@
+{% extends "base.html" %} {% block content %}
+<div class="container">
+    <section id="intro" class="intro-section">
+        <div class="row">
+            <div class="col-lg-15">
+                <a href="/files">
+                    <img src="https://res.cloudinary.com/dma8tn6ge/image/upload/v1492545678/files_pwewdt.png">
+                </a>
+                <br>
+                <br>
+            </div>
+        </div>
+    </section>
+    <div class="row">
+        <p> Thanks for using our website &nbsp;&nbsp;{{ session['user'] }}</p>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+{% endblock %}
