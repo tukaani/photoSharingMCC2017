@@ -37,7 +37,7 @@ def process_image():
     return jsonify({'response': response})
 
 
-@app.route('/photoorganizer/api/v1.0/status')
+@app.route('/photoorganizer/api/v1.0/status', methods=['GET'])
 def status():
     """Status photoorganizer application"""
     status = {
@@ -45,6 +45,27 @@ def status():
         'version': 'v1.0'
     }
     return jsonify(status)
+
+
+@app.route('/photoorganizer/api/v1.0/group/create', methods=['GET', 'POST'])
+def create_group():
+    """
+    Create a photo sharing group
+    """
+    pass
+
+
+@app.route('/photoorganizer/api/v1.0/group/join', methods=['GET', 'POST'])
+def join_group():
+    """ Allow members to join a group """
+
+    pass
+
+
+@app.route('/photoorganizer/api/v1.0/group/delete', methods=['GET', 'POST'])
+def delete_group():
+    """" Delete the group and images """
+    pass
 
 
 @app.route('/')
