@@ -4,9 +4,13 @@
 #
 # Copyright (c) 2017 Aalto University, Finland
 #                    All rights reserved
+
 import logging
 from flask import Flask, request, session, redirect, url_for, jsonify
 from flask import render_template
+import detect_image
+import requests
+
 
 app = Flask(__name__)
 app.secret_key = 'F12Zr47j3yX R~X@lH!jmM]Lwf/,?KT'
@@ -14,28 +18,23 @@ app.secret_key = 'F12Zr47j3yX R~X@lH!jmM]Lwf/,?KT'
 
 @app.before_request
 def session_management():
+    """
+    Initialize session data
+    """
     session.permanent = True
 
 
-@app.route('/photoorganizer/api/v1.0/process', methods=['POST', 'GET'])
-def process_images():
-    """Read the image from request and respond with base64 encoded"""
-
-    tasks = [
-        {
-            'id': 1,
-            'title': u'Buy groceries',
-            'description': u'Milk, Cheese, Pizza, Fruit, Tylenol',
-            'done': False
-        },
-        {
-            'id': 2,
-            'title': u'Learn Python',
-            'description': u'Need to find a good Python tutorial on the web',
-            'done': False
-        }
-    ]
-    return jsonify({'tasks': tasks})
+@app.route('/photoorganizer/api/v1.0/process', methods=['GET', 'POST'])
+def process_image():
+    """Read the image from request info and respond with base64 encoded"""
+    image_url = request.args.get('image_url')
+    is_contains_people = detect_image.detect_face(
+        requests.get(image_url).content)
+    response = {
+        'image_url': image_url,
+        'is_contains_people': is_contains_people
+    }
+    return jsonify({'response': response})
 
 
 @app.route('/photoorganizer/api/v1.0/status')
