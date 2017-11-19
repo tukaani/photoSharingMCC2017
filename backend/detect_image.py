@@ -6,7 +6,7 @@
 #                    All rights reserved
 
 import base64
-from service import Service
+from google_service import Service
 
 #ACCESS_TOKEN = os.environ.get('VISION_API')
 

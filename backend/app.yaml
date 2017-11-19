@@ -6,4 +6,8 @@ runtime_config:
   python_version: 3
 
 env_variables:
-    VISION_API: AIzaSyD_xI4WpcVcd7Um7cPqv2c57SSKsqbz94U
+  VISION_API: xxxxxxx
+  API_KEY: xxxxxxxxxx
+  AUTH_DOMAIN: xxxxxx
+  DATABASE_URL: xxxxx
+  STORAGE_BUCKET: xxx
