@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "polar-scene-149514",
+  "private_key_id": "68157109d75fdc1c540305078d679d6d8d6cf2f5",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCHh1FaSL4FpFlk\nrtQgpM3lMXzvvd/MHuaJ/+pg44e1/ZmVDihZD+xQ6giGc8nzXsXpkYPkbPxLX0qZ\n1S4F0xWcEiOCI5DZU3MXpJ5Ddkndt61ZZ5pzv2BQmurW+gApcv4fDRhSw+l9PrUA\n1GDbA/aM8PtfEHkGI5Mt/5QWClLR6hQwksrRBxMvae0wBL9gZ6upVYp3MmEhY3hV\n/Ho24LVTllEMGjhpm3Idis8XKc7eB1UNnPA+uGmSJ8OhefBVWqgze4Atxg6vEwK6\nvAuCpeZoh4NjNxS57s8xohdlAcb7ytuUJ4Vr42Hp0bUwXoy7HsWuTF0Tr/uEKeqa\nzJfmStsLAgMBAAECggEAErRtWO2TNEojgE7UvhCgzhIPcTMecRiOrtsgKPEeKNLw\nYG8MyIX3Eo/KT2wpoiohXIQV1O/pvilPrX2LlYg1gk3Kksp/0k6/IrM4mIz50tzn\n0uAGpBT0oQtQgA0O+qmBQx3Wjo21avC9oHivSWr5mygjOVKXsW41gPK2KHiSR6A4\na7bbvEo7UsoQ3REmHH0Kz+NEzPru/iXH+D78klD0BoznqugoQAPDjZMufj8rWXi1\nk5F3eKVHR5WAN3SCUT2HIW8u/x0aGhJl+GAfMn5eR6jSvdRkTOhgX1IOzt9gEi2g\nc+DMdTZDyTAeNe4Dcz+aurlh3YgeXcpdP4/1iCRg8QKBgQC/fn01Qop3EUaM80AL\n+dzqHfwVLbkNsAc4YDCjwcl3gMKYIzzshCQoQvlQ93M/OosIze0UDTnGg6jARQkY\nbPAoI640j+goJeFelwvaQwgJVJKRuL5TbSZ7iZexuHPkr2ju1CmQXcyNCUaILI5L\nh+BqZdwhPVaY6sQ7QSw8cQDzmQKBgQC1LqM6RoNp2eOIyq3MdXtLS/LXLgcRWmm/\nPNZ8GxnV8AJjPfKwZSsb9xOvKSXGVH2KtJrqMzpt0p0FFr0Kk8QuhaV9QGhhc1uy\nuMkVLtEnp8e0XyAiilJ+ZwRAdSkDkSOOO3E5vvZIgpSlYsqyUc8nrWuMDNxuO/oT\nfOoOMDQqQwKBgGhfAM9unRmYiON6EYZ1gTr5bNP+P8Z+EvFfPCOFE9HWlDlnu2UO\nAMcQ+eJvfJkRx4Xc90Lekoboa6mf9v0hIyQ9jk2Hwflf7B4qJYOo1VCAkAJstw+x\nhi//JnbvGfuiv4asjJrrBPo5+/9siYIRZPeY3Qog7HocOygwtXOcA/DBAoGAIehV\nge16YI/3hj0wI4iFB4VyMBUcG4JJMhIHrfhAcIpXWA1a4uo8FCK8W1afDCv5xsCg\nEV5++9ijrDUiMd2PpIk8fGFWZ454Rc1RTJaTbBF5TWdUE0LBx4guAoYqo9FAzziO\nqxjy7IULnpwLhS3MUAejjfVGN5cf6Q/Cmd8plBMCgYBQ4zTtrb99PFKBRTGQL/Sg\nqeIB1bdIDsOQyn0Zorb1qaNUeDdqy3sJu482bYeQ0U0wX8+YAg5vdyj+Myws+tnd\n+7h9Hup5h/8eOnwWoNvNGrcKNT38M8KrVJSzExcOHFTYcGhD8W43OjGjAETnKM86\n/1w6F5VHiyRFXr++pLHdPw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-pe45k@polar-scene-149514.iam.gserviceaccount.com",
+  "client_id": "114993277382726952980",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-pe45k%40polar-scene-149514.iam.gserviceaccount.com"
+}

@@ -1,0 +1,6 @@
+Detect People in the image
+curl -i http://0.0.0.0:8080/photoorganizer/api/v1.0/process?image_url="http://v3wall.com/wallpaper/1366_768/1002/1366_768_20100204012133711228.jpg"
+
+
+Check the status of the app
+curl -i http://0.0.0.0:8080/photoorganizer/api/v1.0/status
