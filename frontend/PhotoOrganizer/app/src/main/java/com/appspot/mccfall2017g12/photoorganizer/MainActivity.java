@@ -1,6 +1,7 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -19,8 +20,9 @@ public class MainActivity extends AppCompatActivity {
             new MenuItem(R.string.gallery, R.drawable.ic_collections_black_24dp) {
                 @Override
                 public void launch(Context context) {
-                    //TODO
-                    Toast.makeText(context, "Wanna see photos?", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(MainActivity.this, AlbumActivity.class);
+                    intent.putExtra(AlbumActivity.EXTRA_ALBUM, "a1");
+                    MainActivity.this.startActivity(intent);
                 }
             },
             new MenuItem(R.string.takePhoto, R.drawable.ic_add_a_photo_black_24dp) {
