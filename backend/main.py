@@ -6,10 +6,12 @@
 #                    All rights reserved
 
 import logging
+import base64
 from flask import Flask, request, session, redirect, url_for, jsonify
 from flask import render_template
 import detect_image
 import requests
+import http
 
 
 app = Flask(__name__)
@@ -25,19 +27,46 @@ def session_management():
 
 
 @app.route('/photoorganizer/api/v1.0/process', methods=['GET', 'POST'])
-def process_image():
-    """Read the image from request info and respond with base64 encoded"""
+def process_image_v1():
+    """Read the image from request info(url) and respond with base64 encoded"""
     try:
         image_url = request.args.get('image_url')
+        data = base64.b64encode(requests.get(
+            image_url).content).decode('UTF-8')
         is_contains_people = detect_image.detect_face(
-            requests.get(image_url).content)
+            data)
         response = {
-            'image_url': image_url,
+            'status': http.HTTPStatus.OK,
             'is_contains_people': is_contains_people
         }
         return jsonify({'response': response})
     except Exception as ex:
         logging.exception(ex)
+        response = {
+            'status': http.HTTPStatus.BAD_REQUEST,
+            'error': "invalid JSON"
+        }
+        return response
+
+
+@app.route('/photoorganizer/api/v2.0/process', methods=['GET', 'POST'])
+def process_image_v2():
+    """Read the base64 encoded image from request info and respond with base64 encoded"""
+    try:
+        content = request.get_json()
+        is_contains_people = detect_image.detect_face(content['data'])
+        response = {
+            'status': http.HTTPStatus.ACCEPTED,
+            'is_contains_people': is_contains_people
+        }
+        return jsonify({'response': response})
+    except Exception as ex:
+        logging.exception(ex)
+        response = {
+            'status': http.HTTPStatus.BAD_REQUEST,
+            'error': "invalid JSON"
+        }
+        return jsonify({'response': response})
 
 
 @app.route('/photoorganizer/api/v1.0/status', methods=['GET'])

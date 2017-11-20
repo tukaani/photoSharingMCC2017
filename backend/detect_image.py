@@ -14,12 +14,10 @@ from google_service import Service
 ACCESS_TOKEN = "AIzaSyD_xI4WpcVcd7Um7cPqv2c57SSKsqbz94U"
 
 
-def detect_face(image):
+def detect_face(image_content):
     """Run a face detection request on a single image"""
 
     service = Service('vision', 'v1', access_token=ACCESS_TOKEN)
-    image_content = base64.b64encode(image).decode('UTF-8')
-
     body = {
         'requests': [{
             'image': {
