@@ -46,7 +46,8 @@ public class AlbumActivity extends AppCompatActivity {
             public void onClick(View view) {
                 int position = AlbumActivity.this.recyclerView.getChildAdapterPosition(view);
                 Photo photo = AlbumActivity.this.adapter.getItem(position);
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(photo.path));
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(Uri.parse(photo.path), "image/*");
                 startActivity(intent);
             }
         });
