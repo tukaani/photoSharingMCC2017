@@ -2,6 +2,7 @@ package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Context;
 import android.content.Intent;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -15,6 +16,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
         final MenuItem[] menuItems = new MenuItem[] {
             new MenuItem(R.string.gallery, R.drawable.ic_collections_black_24dp) {
@@ -42,7 +45,9 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void launch(Context context) {
                     //TODO
-                    Toast.makeText(context, "Tryin' to fix smth?", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(context, "Tryin' to fix smth?", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+                    MainActivity.this.startActivity(intent);
                 }
             }
         };

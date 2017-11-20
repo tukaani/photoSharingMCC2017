@@ -2,26 +2,26 @@
 <resources>
     <string-array name="pref_imgQuality_mobile_entries">
         <item>Low</item>
-        <item>Medium</item>
         <item>High</item>
+        <item>Original</item>
     </string-array>
 
     <string-array name="pref_imgQuality_wifi_entries">
         <item>Low</item>
-        <item>Medium</item>
         <item>High</item>
+        <item>Original</item>
     </string-array>
 
     <string-array name="pref_imgQuality_mobile_values">
-        <item>50x50</item>
-        <item>100x100</item>
-        <item>original</item>
+        <item>640x480</item>
+        <item>1280x960</item>
+        <item>Full</item>
     </string-array>
 
     <string-array name="pref_imgQuality_wifi_values">
-        <item>50x50</item>
-        <item>100x100</item>
-        <item>original</item>
+        <item>640x480</item>
+        <item>1280x960</item>
+        <item>Full</item>
     </string-array>
 
 </resources>
