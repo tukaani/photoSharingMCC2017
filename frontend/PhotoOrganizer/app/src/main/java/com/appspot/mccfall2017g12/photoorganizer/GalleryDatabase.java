@@ -25,24 +25,34 @@ public abstract class GalleryDatabase extends RoomDatabase {
 
     public abstract GalleryDao galleryDao();
 
-    public static class LoadPhotosTask
+    public static class LoadPhotosByAuthorTask
             extends RelayPostExecutionTask<String, Void, LiveData<Photo[]>> {
 
         @Override
         protected LiveData<Photo[]> doInBackground(String... params) {
             String albumKey = params[0];
-            LiveData<Photo[]> photos = GalleryDatabase.getInstance().galleryDao()
+            return GalleryDatabase.getInstance().galleryDao()
                     .loadAlbumsPhotosByAuthor(albumKey);
-            return photos;
         }
     }
 
-    public static class LoadAlbumsTask extends RelayPostExecutionTask<Void, Void, Album[]> {
+    public static class LoadPhotosByPeopleTask
+            extends RelayPostExecutionTask<String, Void, LiveData<Photo[]>> {
 
         @Override
-        protected Album[] doInBackground(Void... voids) {
-            Album[] albums = GalleryDatabase.getInstance().galleryDao().loadAllAlbums();
-            return albums;
+        protected LiveData<Photo[]> doInBackground(String... params) {
+            String albumKey = params[0];
+            return GalleryDatabase.getInstance().galleryDao()
+                    .loadAlbumsPhotosByPeopleAppearance(albumKey);
+        }
+    }
+
+    public static class LoadAlbumsTask
+            extends RelayPostExecutionTask<Void, Void, LiveData<Album.Extended[]>> {
+
+        @Override
+        protected LiveData<Album.Extended[]> doInBackground(Void... voids) {
+            return GalleryDatabase.getInstance().galleryDao().loadAllAlbums();
         }
     }
 

@@ -17,7 +17,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".LoginActivity" />
-        <activity android:name=".AlbumActivity"></activity>
+        <activity android:name=".AlbumActivity" />
+        <activity android:name=".GalleryActivity"></activity>
     </application>
 
 </manifest>
