@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_imgQuality_mobile_entries">
+        <item>Low</item>
+        <item>Medium</item>
+        <item>High</item>
+    </string-array>
+
+    <string-array name="pref_imgQuality_wifi_entries">
+        <item>Low</item>
+        <item>Medium</item>
+        <item>High</item>
+    </string-array>
+
+    <string-array name="pref_imgQuality_mobile_values">
+        <item>50x50</item>
+        <item>100x100</item>
+        <item>original</item>
+    </string-array>
+
+    <string-array name="pref_imgQuality_wifi_values">
+        <item>50x50</item>
+        <item>100x100</item>
+        <item>original</item>
+    </string-array>
+
+</resources>
