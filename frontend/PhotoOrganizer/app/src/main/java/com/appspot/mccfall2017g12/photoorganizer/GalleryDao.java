@@ -19,8 +19,10 @@ public interface GalleryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAlbums(Album... albums);
 
-    @Query("SELECT * FROM Album")
-    Album[] loadAllAlbums();
+    @Query("SELECT * FROM Album NATURAL LEFT OUTER JOIN "
+            + "(SELECT albumKey, COUNT(*) AS photoCount, MIN(path) AS path "
+            + "FROM Photo GROUP BY albumKey)")
+    LiveData<Album.Extended[]> loadAllAlbums();
 
     @Query("SELECT * FROM Photo WHERE albumKey = :albumKey ORDER BY peopleAppearance")
     LiveData<Photo[]> loadAlbumsPhotosByPeopleAppearance(String albumKey);

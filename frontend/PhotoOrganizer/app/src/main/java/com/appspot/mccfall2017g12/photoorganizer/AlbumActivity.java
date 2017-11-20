@@ -9,19 +9,19 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.View;
+import android.view.*;
+import android.view.MenuItem;
 
 import java.util.Random;
 import java.util.UUID;
 
-public class AlbumActivity extends AppCompatActivity {
+public class AlbumActivity extends AppCompatActivity implements PostExecutor<LiveData<Photo[]>> {
 
     public static final String EXTRA_ALBUM = "com.appspot.mccfall2017g12.photoorganizer.ALBUM";
     private static final int RESULT_ADD_IMAGE_DEBUG = 1;
 
     private RecyclerView recyclerView;
     private PhotoAdapter adapter;
-    private LiveData<Photo[]> photos;
     private String albumKey;
 
     private static final int COLUMN_COUNT = 3;
@@ -38,30 +38,17 @@ public class AlbumActivity extends AppCompatActivity {
         else
             throw new IllegalArgumentException("Album key missing.");
 
-
-
         this.recyclerView = findViewById(R.id.photos_recycler_view);
         this.recyclerView.setHasFixedSize(true);
 
-        this.adapter = new PhotoAdapter();
+        this.adapter = new PhotoAdapter(this);
         this.recyclerView.setAdapter(this.adapter);
 
         GridLayoutManager layoutManager = new GridLayoutManager(this, COLUMN_COUNT);
         this.recyclerView.setLayoutManager(layoutManager);
 
         GalleryDatabase.initialize(getApplicationContext());
-
-        //TODO Remove
-        Album album = new Album();
-        album.setKey(this.albumKey);
-        new GalleryDatabase.InsertAlbumTask().execute(album);
-
-        new GalleryDatabase.LoadPhotosTask().with(new PostExecutor<LiveData<Photo[]>>() {
-            @Override
-            public void onPostExecute(LiveData<Photo[]> photos) {
-                AlbumActivity.this.setPhotos(photos);
-            }
-        }).execute(this.albumKey);
+        new GalleryDatabase.LoadPhotosByPeopleTask().with(this).execute(this.albumKey);
 
         findViewById(R.id.addButton).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -74,6 +61,26 @@ public class AlbumActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_album, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.sortByAuthorItem:
+                new GalleryDatabase.LoadPhotosByAuthorTask().with(this).execute(this.albumKey);
+                return true;
+            case R.id.sortByPeopleItem:
+                new GalleryDatabase.LoadPhotosByPeopleTask().with(this).execute(this.albumKey);
+                return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
@@ -83,32 +90,24 @@ public class AlbumActivity extends AppCompatActivity {
                     Uri uri = data.getData();
 
                     Photo photo = new Photo();
-                    photo.setKey(UUID.randomUUID().toString());
-                    photo.setPath(uri.toString());
-                    photo.setAlbumKey(albumKey);
+                    photo.photoKey = UUID.randomUUID().toString();
+                    photo.path = uri.toString();
+                    photo.albumKey = albumKey;
                     Random random = new Random();
-                    photo.setAuthor(new String[] {
+                    photo.author = new String[] {
                             "Frodo", "Sam", "Merry", "Pippin"
-                    }[random.nextInt(4)]);
-                    photo.setPeopleAppearance(new int[] {
+                    }[random.nextInt(4)];
+                    photo.peopleAppearance = new int[] {
                             Photo.PEOPLE_NA, Photo.PEOPLE_NO, Photo.PEOPLE_YES
-                    }[random.nextInt(3)]);
+                    }[random.nextInt(3)];
 
                     new GalleryDatabase.InsertPhotoTask().execute(photo);
                 }
         }
     }
 
-    private void setPhotos(LiveData<Photo[]> photos) {
-        if (this.photos != null) {
-            this.photos.removeObservers(this);
-        }
-        this.photos = photos;
-        this.photos.observe(this, new Observer<Photo[]>() {
-            @Override
-            public void onChanged(@Nullable Photo[] photos) {
-                AlbumActivity.this.adapter.setPhotos(photos);
-            }
-        });
+    @Override
+    public void onPostExecute(LiveData<Photo[]> liveData) {
+        this.adapter.setLiveData(liveData);
     }
 }

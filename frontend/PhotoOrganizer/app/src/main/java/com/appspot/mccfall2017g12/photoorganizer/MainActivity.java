@@ -20,8 +20,7 @@ public class MainActivity extends AppCompatActivity {
             new MenuItem(R.string.gallery, R.drawable.ic_collections_black_24dp) {
                 @Override
                 public void launch(Context context) {
-                    Intent intent = new Intent(MainActivity.this, AlbumActivity.class);
-                    intent.putExtra(AlbumActivity.EXTRA_ALBUM, "a1");
+                    Intent intent = new Intent(MainActivity.this, GalleryActivity.class);
                     MainActivity.this.startActivity(intent);
                 }
             },
