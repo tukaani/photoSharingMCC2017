@@ -1,21 +1,20 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.arch.lifecycle.LiveData;
-import android.arch.lifecycle.Observer;
 import android.content.Intent;
 import android.net.Uri;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.*;
+import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import java.util.Random;
 import java.util.UUID;
 
-public class AlbumActivity extends AppCompatActivity implements PostExecutor<LiveData<Photo[]>> {
+public class AlbumActivity extends AppCompatActivity {
 
     public static final String EXTRA_ALBUM = "com.appspot.mccfall2017g12.photoorganizer.ALBUM";
     private static final int RESULT_ADD_IMAGE_DEBUG = 1;
@@ -23,6 +22,7 @@ public class AlbumActivity extends AppCompatActivity implements PostExecutor<Liv
     private RecyclerView recyclerView;
     private PhotoAdapter adapter;
     private String albumKey;
+    private final LoadItemsPostExecutor loadItemsPostExecutor = new LoadItemsPostExecutor();
 
     private static final int COLUMN_COUNT = 3;
 
@@ -48,16 +48,21 @@ public class AlbumActivity extends AppCompatActivity implements PostExecutor<Liv
         this.recyclerView.setLayoutManager(layoutManager);
 
         GalleryDatabase.initialize(getApplicationContext());
-        new GalleryDatabase.LoadPhotosByPeopleTask().with(this).execute(this.albumKey);
+        new GalleryDatabase.LoadPhotosByPeopleTask()
+                .with(this.loadItemsPostExecutor)
+                .execute(this.albumKey);
 
-        findViewById(R.id.addButton).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                startActivityForResult(intent, RESULT_ADD_IMAGE_DEBUG);
+        //TODO Remove
+        {
+            findViewById(R.id.addButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                    startActivityForResult(intent, RESULT_ADD_IMAGE_DEBUG);
 
-            }
-        });
+                }
+            });
+        }
     }
 
     @Override
@@ -70,16 +75,21 @@ public class AlbumActivity extends AppCompatActivity implements PostExecutor<Liv
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.sortByAuthorItem:
-                new GalleryDatabase.LoadPhotosByAuthorTask().with(this).execute(this.albumKey);
+                new GalleryDatabase.LoadPhotosByAuthorTask()
+                        .with(this.loadItemsPostExecutor)
+                        .execute(this.albumKey);
                 return true;
             case R.id.sortByPeopleItem:
-                new GalleryDatabase.LoadPhotosByPeopleTask().with(this).execute(this.albumKey);
+                new GalleryDatabase.LoadPhotosByPeopleTask()
+                        .with(this.loadItemsPostExecutor)
+                        .execute(this.albumKey);
                 return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
+    //TODO Remove
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -106,8 +116,10 @@ public class AlbumActivity extends AppCompatActivity implements PostExecutor<Liv
         }
     }
 
-    @Override
-    public void onPostExecute(LiveData<Photo[]> liveData) {
-        this.adapter.setLiveData(liveData);
+    private class LoadItemsPostExecutor implements PostExecutor<LiveData<Photo[]>>  {
+        @Override
+        public void onPostExecute(LiveData<Photo[]> liveData) {
+            AlbumActivity.this.adapter.setLiveData(liveData);
+        }
     }
 }

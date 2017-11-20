@@ -1,21 +1,17 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.arch.lifecycle.LiveData;
-import android.arch.lifecycle.Observer;
 import android.content.Intent;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
-public class GalleryActivity extends AppCompatActivity
-        implements PostExecutor<LiveData<Album.Extended[]>>, View.OnClickListener {
+public class GalleryActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private AlbumAdapter adapter;
-    private LiveData<Album.Extended[]> albums;
 
     private static final int COLUMN_COUNT = 2;
 
@@ -27,14 +23,29 @@ public class GalleryActivity extends AppCompatActivity
         this.recyclerView = findViewById(R.id.albums_recycler_view);
         this.recyclerView.setHasFixedSize(true);
 
-        this.adapter = new AlbumAdapter(this, this);
+        this.adapter = new AlbumAdapter(this, new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int position = GalleryActivity.this.recyclerView.getChildAdapterPosition(view);
+                String albumKey = GalleryActivity.this.adapter.getItem(position).album.albumKey;
+
+                Intent intent = new Intent(GalleryActivity.this, AlbumActivity.class);
+                intent.putExtra(AlbumActivity.EXTRA_ALBUM, albumKey);
+                startActivity(intent);
+            }
+        });
         this.recyclerView.setAdapter(adapter);
 
         GridLayoutManager layoutManager = new GridLayoutManager(this, COLUMN_COUNT);
         this.recyclerView.setLayoutManager(layoutManager);
 
         GalleryDatabase.initialize(getApplicationContext());
-        new GalleryDatabase.LoadAlbumsTask().with(this).execute();
+        new GalleryDatabase.LoadAlbumsTask().with(new PostExecutor<LiveData<Album.Extended[]>>() {
+            @Override
+            public void onPostExecute(LiveData<Album.Extended[]> liveData) {
+                GalleryActivity.this.adapter.setLiveData(liveData);
+            }
+        }).execute();
 
         //TODO Remove
         {
@@ -48,19 +59,5 @@ public class GalleryActivity extends AppCompatActivity
 
             new GalleryDatabase.InsertAlbumTask().execute(album1, album2);
         }
-    }
-
-    @Override
-    public void onPostExecute(final LiveData<Album.Extended[]> liveData) {
-        this.adapter.setLiveData(liveData);
-    }
-
-    @Override
-    public void onClick(View view) {
-        int position = this.recyclerView.getChildAdapterPosition(view);
-        String albumKey = this.adapter.getItem(position).album.albumKey;
-        Intent intent = new Intent(this, AlbumActivity.class);
-        intent.putExtra(AlbumActivity.EXTRA_ALBUM, albumKey);
-        startActivity(intent);
     }
 }
