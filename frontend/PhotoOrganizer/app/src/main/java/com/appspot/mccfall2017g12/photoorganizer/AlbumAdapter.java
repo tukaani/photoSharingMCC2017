@@ -3,12 +3,9 @@ package com.appspot.mccfall2017g12.photoorganizer;
 import android.arch.lifecycle.LifecycleOwner;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -16,7 +13,7 @@ import com.squareup.picasso.Picasso;
 
 import java.util.Locale;
 
-public class AlbumAdapter extends CommonAdapter<Album.Extended, AlbumAdapter.ViewHolder> {
+public class AlbumAdapter extends LiveDataAdapter<Album.Extended, AlbumAdapter.ViewHolder> {
 
     public AlbumAdapter(LifecycleOwner owner, View.OnClickListener onClickListener) {
         super(owner, R.layout.layout_album_item, onClickListener);

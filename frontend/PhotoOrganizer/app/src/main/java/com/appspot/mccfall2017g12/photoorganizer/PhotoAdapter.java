@@ -10,7 +10,7 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-public class PhotoAdapter extends CommonAdapter<Photo, PhotoAdapter.ViewHolder> {
+public class PhotoAdapter extends LiveDataAdapter<Photo, PhotoAdapter.ViewHolder> {
 
     public PhotoAdapter(LifecycleOwner owner) {
         super(owner, R.layout.layout_photo_item, null);

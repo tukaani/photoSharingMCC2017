@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        GridView gridView = (GridView) findViewById(R.id.gridView);
+        GridView gridView = findViewById(R.id.gridView);
         gridView.setAdapter(new MenuItemAdapter(this, menuItems));
 
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {

@@ -42,8 +42,8 @@ class MenuItemAdapter extends BaseAdapter {
             convertView = layoutInflater.inflate(R.layout.layout_menu_item, null);
         }
 
-        TextView captionTextView = (TextView) convertView.findViewById(R.id.captionTextView);
-        ImageView thumbImageView = (ImageView) convertView.findViewById(R.id.thumbImageView);
+        TextView captionTextView = convertView.findViewById(R.id.captionTextView);
+        ImageView thumbImageView = convertView.findViewById(R.id.thumbImageView);
 
         captionTextView.setText(menuItem.getCaptionId());
         thumbImageView.setImageResource(menuItem.getThumbId());
