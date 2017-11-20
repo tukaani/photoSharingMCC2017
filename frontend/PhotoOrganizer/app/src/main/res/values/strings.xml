@@ -16,4 +16,6 @@
     <string name="title_activity_gallery">GalleryActivity</string>
     <string name="action_settings">Settings</string>
 
+    <string name="pref_imgQuality_mobile">mobiliQuality</string>
+    <string name="pref_imgQuality_wifi">wifiQuality</string>
 </resources>
