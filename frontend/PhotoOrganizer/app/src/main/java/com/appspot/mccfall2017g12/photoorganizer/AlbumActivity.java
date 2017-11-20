@@ -41,7 +41,15 @@ public class AlbumActivity extends AppCompatActivity {
         this.recyclerView = findViewById(R.id.photos_recycler_view);
         this.recyclerView.setHasFixedSize(true);
 
-        this.adapter = new PhotoAdapter(this);
+        this.adapter = new PhotoAdapter(this, new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int position = AlbumActivity.this.recyclerView.getChildAdapterPosition(view);
+                Photo photo = AlbumActivity.this.adapter.getItem(position);
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(photo.path));
+                startActivity(intent);
+            }
+        });
         this.recyclerView.setAdapter(this.adapter);
 
         GridLayoutManager layoutManager = new GridLayoutManager(this, COLUMN_COUNT);

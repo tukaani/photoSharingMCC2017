@@ -12,8 +12,8 @@ import com.squareup.picasso.Picasso;
 
 public class PhotoAdapter extends LiveDataAdapter<Photo, PhotoAdapter.ViewHolder> {
 
-    public PhotoAdapter(LifecycleOwner owner) {
-        super(owner, R.layout.layout_photo_item, null);
+    public PhotoAdapter(LifecycleOwner owner, View.OnClickListener onClickListener) {
+        super(owner, R.layout.layout_photo_item, onClickListener);
     }
 
     @Override
