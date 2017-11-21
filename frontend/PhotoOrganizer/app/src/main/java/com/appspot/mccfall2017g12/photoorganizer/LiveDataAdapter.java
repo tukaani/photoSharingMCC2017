@@ -10,17 +10,14 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
 public abstract class LiveDataAdapter<T extends Diffable<T>, VH extends RecyclerView.ViewHolder>
-        extends ClickSensitiveAdapter<VH> {
+        extends RecyclerView.Adapter<VH> {
 
     private final LifecycleOwner owner;
     private LiveData<T[]> liveData;
     private T[] items;
     private final Observer<T[]> itemsObserver;
 
-    public LiveDataAdapter(LifecycleOwner owner, @LayoutRes int itemLayout,
-                           @Nullable View.OnClickListener onClickListener) {
-        super(itemLayout, onClickListener);
-
+    public LiveDataAdapter(LifecycleOwner owner) {
         this.owner = owner;
         this.itemsObserver = new ItemsObserver();
     }

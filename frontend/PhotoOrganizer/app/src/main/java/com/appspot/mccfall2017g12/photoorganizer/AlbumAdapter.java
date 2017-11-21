@@ -5,7 +5,9 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -15,8 +17,22 @@ import java.util.Locale;
 
 public class AlbumAdapter extends LiveDataAdapter<Album.Extended, AlbumAdapter.ViewHolder> {
 
+    private final View.OnClickListener onClickListener;
+
     public AlbumAdapter(LifecycleOwner owner, View.OnClickListener onClickListener) {
-        super(owner, R.layout.layout_album_item, onClickListener);
+        super(owner);
+
+        this.onClickListener = onClickListener;
+    }
+
+    @Override
+    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View view = LayoutInflater
+                .from(parent.getContext())
+                .inflate(R.layout.layout_album_item, parent, false);
+        if (onClickListener != null)
+            view.setOnClickListener(onClickListener);
+        return new ViewHolder(view);
     }
 
     @Override
@@ -38,11 +54,6 @@ public class AlbumAdapter extends LiveDataAdapter<Album.Extended, AlbumAdapter.V
                 .load(albumExt.path)
                 .config(Bitmap.Config.RGB_565)
                 .into(holder.albumCoverImageView);
-    }
-
-    @Override
-    protected ViewHolder createViewHolderInternal(View view) {
-        return new ViewHolder(view);
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
