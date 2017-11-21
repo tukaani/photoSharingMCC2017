@@ -24,9 +24,21 @@ public interface GalleryDao {
             + "FROM Photo GROUP BY albumKey)")
     LiveData<Album.Extended[]> loadAllAlbums();
 
-    @Query("SELECT * FROM Photo WHERE albumKey = :albumKey ORDER BY peopleAppearance")
-    LiveData<Photo[]> loadAlbumsPhotosByPeopleAppearance(String albumKey);
+    @Query("SELECT photoKey, author, peopleAppearance, path, albumKey, "
+            + Photo.Extended.TYPE_ITEM + " AS itemType "
+            + "FROM Photo WHERE albumKey = :albumKey UNION ALL "
+            + "SELECT DISTINCT peopleAppearance || '', '', peopleAppearance, '', '', "
+            + Photo.Extended.TYPE_PEOPLE_HEADER + " "
+            + "FROM Photo WHERE albumKey = :albumKey "
+            + "ORDER BY peopleAppearance, itemType DESC")
+    LiveData<Photo.Extended[]> loadAlbumsPhotosByPeopleAppearance(String albumKey);
 
-    @Query("SELECT * FROM Photo WHERE albumKey = :albumKey ORDER BY author")
-    LiveData<Photo[]> loadAlbumsPhotosByAuthor(String albumKey);
+    @Query("SELECT photoKey, author, peopleAppearance, path, albumKey, "
+            + Photo.Extended.TYPE_ITEM + " AS itemType "
+            + "FROM Photo WHERE albumKey = :albumKey UNION ALL "
+            + "SELECT DISTINCT author, author, 0, '', '', "
+            + Photo.Extended.TYPE_AUTHOR_HEADER + " "
+            + "FROM Photo WHERE albumKey = :albumKey "
+            + "ORDER BY author, itemType DESC")
+    LiveData<Photo.Extended[]> loadAlbumsPhotosByAuthor(String albumKey);
 }

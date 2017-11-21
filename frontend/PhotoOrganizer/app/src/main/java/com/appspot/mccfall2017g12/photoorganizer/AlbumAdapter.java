@@ -56,7 +56,7 @@ public class AlbumAdapter extends LiveDataAdapter<Album.Extended, AlbumAdapter.V
                 .into(holder.albumCoverImageView);
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
 
         final ImageView albumCoverImageView;
         final TextView nameTextView;

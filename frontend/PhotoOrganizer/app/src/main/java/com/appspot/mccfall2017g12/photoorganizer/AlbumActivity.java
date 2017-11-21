@@ -1,12 +1,14 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.arch.lifecycle.LiveData;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.AttributeSet;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,12 +26,12 @@ public class AlbumActivity extends AppCompatActivity {
     private String albumKey;
     private final LoadItemsPostExecutor loadItemsPostExecutor = new LoadItemsPostExecutor();
 
-    private static final int COLUMN_COUNT = 3;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_album);
+
+        final int columnCount = getResources().getInteger(R.integer.photo_column_count);
 
         Intent intent = getIntent();
 
@@ -45,7 +47,7 @@ public class AlbumActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 int position = AlbumActivity.this.recyclerView.getChildAdapterPosition(view);
-                Photo photo = AlbumActivity.this.adapter.getItem(position);
+                Photo photo = AlbumActivity.this.adapter.getItem(position).photo;
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setDataAndType(Uri.parse(photo.path), "image/*");
                 startActivity(intent);
@@ -53,7 +55,15 @@ public class AlbumActivity extends AppCompatActivity {
         });
         this.recyclerView.setAdapter(this.adapter);
 
-        GridLayoutManager layoutManager = new GridLayoutManager(this, COLUMN_COUNT);
+        GridLayoutManager layoutManager = new GridLayoutManager(this, columnCount);
+        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                if (AlbumActivity.this.adapter.getItem(position).isHeader())
+                    return columnCount;
+                return 1;
+            }
+        });
         this.recyclerView.setLayoutManager(layoutManager);
 
         GalleryDatabase.initialize(getApplicationContext());
@@ -72,6 +82,13 @@ public class AlbumActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    @Override
+    public View onCreateView(String name, Context context, AttributeSet attrs) {
+        return super.onCreateView(name, context, attrs);
+
+
     }
 
     @Override
@@ -125,9 +142,9 @@ public class AlbumActivity extends AppCompatActivity {
         }
     }
 
-    private class LoadItemsPostExecutor implements PostExecutor<LiveData<Photo[]>>  {
+    private class LoadItemsPostExecutor implements PostExecutor<LiveData<Photo.Extended[]>>  {
         @Override
-        public void onPostExecute(LiveData<Photo[]> liveData) {
+        public void onPostExecute(LiveData<Photo.Extended[]> liveData) {
             AlbumActivity.this.adapter.setLiveData(liveData);
         }
     }

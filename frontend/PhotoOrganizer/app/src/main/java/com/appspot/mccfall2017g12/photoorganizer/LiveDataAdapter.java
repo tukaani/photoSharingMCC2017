@@ -18,6 +18,7 @@ public abstract class LiveDataAdapter<T extends Diffable<T>, VH extends Recycler
     private final Observer<T[]> itemsObserver;
 
     public LiveDataAdapter(LifecycleOwner owner) {
+
         this.owner = owner;
         this.itemsObserver = new ItemsObserver();
     }

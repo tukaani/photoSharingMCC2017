@@ -23,4 +23,7 @@
     <string name="pref_imgQuality_wifi">Image quality used in wifi</string>
     <string name="pref_imgQuality_mobile_default">640x480</string>
     <string name="pref_imgQuality_wifi_default">Full</string>
+    <string name="no_people">No people</string>
+    <string name="people">People</string>
+    <string name="uncategorized">(uncategorized)</string>
 </resources>
