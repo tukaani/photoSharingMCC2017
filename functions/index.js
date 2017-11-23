@@ -6,10 +6,6 @@ admin.initializeApp(functions.config().firebase);
 const gcs = require('@google-cloud/storage')();
 const Vision = require('@google-cloud/vision');
 const vision = new Vision();
-const spawn = require('child-process-promise').spawn;
-const path = require('path');
-const os = require('os');
-const fs = require('fs');
 
 exports.helloWorld = functions.https.onRequest((request, response) => {
     response.send("Hello from Firebase!");
