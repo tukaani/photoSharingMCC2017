@@ -56,7 +56,7 @@ def process_image_v2():
         content = request.get_json()
         is_contains_people = detect_image.detect_face(content['data'])
         response = {
-            'status': http.HTTPStatus.ACCEPTED,
+            'status': http.HTTPStatus.OK,
             'is_contains_people': is_contains_people
         }
         return jsonify({'response': response})
