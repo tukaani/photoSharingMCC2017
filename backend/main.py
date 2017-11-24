@@ -7,12 +7,14 @@
 
 import logging
 import base64
+import http
+import time
 from flask import Flask, request, session, redirect, url_for, jsonify
 from flask import render_template
 import detect_image
 import requests
-import http
-
+import datetime
+import persistence
 
 app = Flask(__name__)
 app.secret_key = 'F12Zr47j3yX R~X@lH!jmM]Lwf/,?KT'
@@ -24,6 +26,59 @@ def session_management():
     Initialize session data
     """
     session.permanent = True
+
+
+@app.route('/photoorganizer/api/v1.0/status', methods=['GET'])
+def status():
+    """Status photoorganizer application"""
+    stats = {
+        'status': 'RUNNING',
+        'version': 'v1.0',
+        'timestamp': datetime.datetime.now()
+    }
+    return jsonify(stats)
+
+
+@app.route('/photoorganizer/api/v1.0/group/create', methods=['POST'])
+def create_group():
+    """Create a photo sharing group"""
+    try:
+        content = request.get_json()
+        group_name = content['group_name']
+        valid_hours = content['validity']
+        group_id, token = persistence.create(
+            group_name=group_name, validity=valid_hours)
+        return jsonify({'group_id': str(group_id), 'token': token})
+    except Exception as ex:
+        logging.exception(ex)
+        response = {
+            'status': http.HTTPStatus.BAD_REQUEST,
+            'error': "invalid JSON"
+        }
+        return response
+
+
+@app.route('/photoorganizer/api/v1.0/group/join', methods=['GET', 'POST'])
+def join_group():
+    """ Allow members to join a group """
+    try:
+        content = request.get_json()
+        group_id = content['group_id']
+        token = persistence.update(group_id)
+        return jsonify({'refreshedtoken': token})
+    except Exception as ex:
+        logging.exception(ex)
+        response = {
+            'status': http.HTTPStatus.BAD_REQUEST,
+            'error': "invalid JSON"
+        }
+        return response
+
+
+@app.route('/photoorganizer/api/v1.0/group/delete', methods=['GET', 'POST'])
+def delete_group():
+    """" Delete the group and images """
+    return jsonify({'status': "Not implemented"})
 
 
 @app.route('/photoorganizer/api/v1.0/process', methods=['GET', 'POST'])
@@ -67,34 +122,6 @@ def process_image_v2():
             'error': "invalid JSON"
         }
         return jsonify({'response': response})
-
-
-@app.route('/photoorganizer/api/v1.0/status', methods=['GET'])
-def status():
-    """Status photoorganizer application"""
-    status = {
-        'status': 'running',
-        'version': 'v1.0'
-    }
-    return jsonify(status)
-
-
-@app.route('/photoorganizer/api/v1.0/group/create', methods=['GET', 'POST'])
-def create_group():
-    """Create a photo sharing group"""
-    return jsonify({'status': "Not implemented"})
-
-
-@app.route('/photoorganizer/api/v1.0/group/join', methods=['GET', 'POST'])
-def join_group():
-    """ Allow members to join a group """
-    return jsonify({'status': "Not implemented"})
-
-
-@app.route('/photoorganizer/api/v1.0/group/delete', methods=['GET', 'POST'])
-def delete_group():
-    """" Delete the group and images """
-    return jsonify({'status': "Not implemented"})
 
 
 @app.route('/')
