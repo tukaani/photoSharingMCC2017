@@ -48,7 +48,6 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void launch(Context context) {
                     dispatchTakePhoto();
-                    Toast.makeText(context, "Take a selfie?", Toast.LENGTH_SHORT).show();
                 }
             },
             new MenuItem(R.string.groups, R.drawable.ic_group_black_24dp) {
@@ -142,10 +141,8 @@ public class MainActivity extends AppCompatActivity {
             photo.path = this.photoFilePath;
             photo.albumId = Album.PRIVATE_ALBUM_ID;
 
-            GalleryDatabase.initialize(this);
-
             //if is private
-            new GalleryDatabase.InsertPhotoTask().execute(photo);
+            new GalleryDatabase.InsertPhotoTask(this).execute(photo);
         }
     }
 

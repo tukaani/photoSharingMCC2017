@@ -1,7 +1,6 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.arch.lifecycle.LiveData;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,7 +9,6 @@ import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.AttributeSet;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -63,11 +61,12 @@ public class AlbumActivity extends AppCompatActivity {
                 }
                 else {
                     Snackbar snackbar = Snackbar.make(AlbumActivity.this.recyclerView,
-                            R.string.file_does_not_exists, Snackbar.LENGTH_SHORT);
-                    snackbar.setAction(R.string.ok, new View.OnClickListener() {
+                            R.string.file_does_not_exists, Snackbar.LENGTH_LONG);
+                    snackbar.setAction(R.string.remove, new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            new GalleryDatabase.DeletePhotoTask().execute(photo);
+                            new GalleryDatabase.DeletePhotoTask(AlbumActivity.this)
+                                    .execute(photo);
                         }
                     });
                     snackbar.show();
@@ -87,8 +86,7 @@ public class AlbumActivity extends AppCompatActivity {
         });
         this.recyclerView.setLayoutManager(layoutManager);
 
-        GalleryDatabase.initialize(getApplicationContext());
-        new GalleryDatabase.LoadPhotosByPeopleTask()
+        new GalleryDatabase.LoadPhotosByPeopleTask(this)
                 .with(this.loadItemsPostExecutor)
                 .execute(this.albumId);
 
@@ -106,13 +104,6 @@ public class AlbumActivity extends AppCompatActivity {
     }
 
     @Override
-    public View onCreateView(String name, Context context, AttributeSet attrs) {
-        return super.onCreateView(name, context, attrs);
-
-
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_album, menu);
         return super.onCreateOptionsMenu(menu);
@@ -122,12 +113,12 @@ public class AlbumActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.sortByAuthorItem:
-                new GalleryDatabase.LoadPhotosByAuthorTask()
+                new GalleryDatabase.LoadPhotosByAuthorTask(this)
                         .with(this.loadItemsPostExecutor)
                         .execute(this.albumId);
                 return true;
             case R.id.sortByPeopleItem:
-                new GalleryDatabase.LoadPhotosByPeopleTask()
+                new GalleryDatabase.LoadPhotosByPeopleTask(this)
                         .with(this.loadItemsPostExecutor)
                         .execute(this.albumId);
                 return true;
@@ -158,7 +149,7 @@ public class AlbumActivity extends AppCompatActivity {
                             Photo.PEOPLE_NA, Photo.PEOPLE_NO, Photo.PEOPLE_YES
                     }[random.nextInt(3)];
 
-                    new GalleryDatabase.InsertPhotoTask().execute(photo);
+                    new GalleryDatabase.InsertPhotoTask(this).execute(photo);
                 }
         }
     }

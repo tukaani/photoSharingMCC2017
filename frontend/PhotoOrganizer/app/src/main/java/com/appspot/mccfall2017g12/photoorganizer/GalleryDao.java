@@ -21,26 +21,26 @@ public interface GalleryDao {
     void insertAlbums(Album... albums);
 
     @Delete
-    public void deletePhotos(Photo... photos);
+    void deletePhotos(Photo... photos);
 
     @Query("SELECT * FROM Album NATURAL LEFT OUTER JOIN "
             + "(SELECT albumId, COUNT(*) AS photoCount, MIN(path) AS path "
             + "FROM Photo GROUP BY albumId)")
     LiveData<Album.Extended[]> loadAllAlbums();
 
-    @Query("SELECT photoId, author, people, path, albumId, "
+    @Query("SELECT photoId, author, people, path, albumId, resolution, localResolution, "
             + Photo.Extended.TYPE_ITEM + " AS itemType "
             + "FROM Photo WHERE albumId = :albumId UNION ALL "
-            + "SELECT DISTINCT people || '', '', people, '', '', "
+            + "SELECT DISTINCT people || '', '', people, '', '', 0, 0, "
             + Photo.Extended.TYPE_PEOPLE_HEADER + " "
             + "FROM Photo WHERE albumId = :albumId "
             + "ORDER BY people, itemType DESC")
     LiveData<Photo.Extended[]> loadAlbumsPhotosByPeople(String albumId);
 
-    @Query("SELECT photoId, author, people, path, albumId, "
+    @Query("SELECT photoId, author, people, path, albumId, resolution, localResolution, "
             + Photo.Extended.TYPE_ITEM + " AS itemType "
             + "FROM Photo WHERE albumId = :albumId UNION ALL "
-            + "SELECT DISTINCT author, author, 0, '', '', "
+            + "SELECT DISTINCT author, author, 0, '', '', 0, 0, "
             + Photo.Extended.TYPE_AUTHOR_HEADER + " "
             + "FROM Photo WHERE albumId = :albumId "
             + "ORDER BY author, itemType DESC")
