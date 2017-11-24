@@ -8,12 +8,11 @@
 import logging
 import base64
 import http
-import time
+import datetime
+import requests
 from flask import Flask, request, session, redirect, url_for, jsonify
 from flask import render_template
 import detect_image
-import requests
-import datetime
 import persistence
 
 app = Flask(__name__)
@@ -51,11 +50,10 @@ def create_group():
         return jsonify({'group_id': str(group_id), 'token': token})
     except Exception as ex:
         logging.exception(ex)
-        response = {
+        return jsonify({
             'status': http.HTTPStatus.BAD_REQUEST,
-            'error': "invalid JSON"
-        }
-        return response
+            'error': "Bad Request"
+        })
 
 
 @app.route('/photoorganizer/api/v1.0/group/join', methods=['GET', 'POST'])
@@ -68,11 +66,10 @@ def join_group():
         return jsonify({'refreshedtoken': token})
     except Exception as ex:
         logging.exception(ex)
-        response = {
+        return jsonify({
             'status': http.HTTPStatus.BAD_REQUEST,
-            'error': "invalid JSON"
-        }
-        return response
+            'error': "Bad Request"
+        })
 
 
 @app.route('/photoorganizer/api/v1.0/group/delete', methods=['GET', 'POST'])
@@ -97,11 +94,10 @@ def process_image_v1():
         return jsonify({'response': response})
     except Exception as ex:
         logging.exception(ex)
-        response = {
+        return jsonify({
             'status': http.HTTPStatus.BAD_REQUEST,
-            'error': "invalid JSON"
-        }
-        return response
+            'error': "Bad data"
+        })
 
 
 @app.route('/photoorganizer/api/v2.0/process', methods=['GET', 'POST'])
