@@ -9,11 +9,11 @@ import android.text.TextUtils;
 @Entity
 public class Album {
 
-    public static final String PRIVATE_ALBUM_KEY = "PRIVATE";
+    public static final String PRIVATE_ALBUM_ID = "PRIVATE";
 
     @PrimaryKey
     @NonNull
-    public String albumKey = "";
+    public String albumId = "";
     public String name;
 
     public static class Extended implements Diffable<Extended> {
@@ -25,7 +25,7 @@ public class Album {
 
         @Override
         public boolean isTheSameAs(Extended other) {
-            return TextUtils.equals(this.album.albumKey, other.album.albumKey);
+            return TextUtils.equals(this.album.albumId, other.album.albumId);
         }
 
         @Override

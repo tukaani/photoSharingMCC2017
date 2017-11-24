@@ -4,25 +4,30 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.ImageView;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
     static final int REQUEST_PHOTO = 1;
     private static final int REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
-
-
+    private String photoFilePath = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
+    // not sure if needed anymore
     private void dispatchTakePhoto() {
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -108,7 +113,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void takePhoto(){
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        dir.mkdirs();
+
+        File file = new File(dir, UUID.randomUUID().toString() + ".jpg");
+        Uri uri = FileProvider.getUriForFile(this,
+                BuildConfig.APPLICATION_ID + ".provider", file);
+
+        this.photoFilePath = file.getAbsolutePath();
+
         Intent takePhoto = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        takePhoto.putExtra(MediaStore.EXTRA_OUTPUT, uri);
         if(takePhoto.resolveActivity(getPackageManager()) != null){
             startActivityForResult(takePhoto, REQUEST_PHOTO);
         }
@@ -118,17 +133,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_PHOTO && resultCode == RESULT_OK) {
-            Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
-
 
             Boolean isBarcode = false;
 
-            PhotoSaver p= new PhotoSaver(getApplicationContext());
+            Photo photo = new Photo();
+            photo.author = "Me"; //TODO real user
+            photo.photoId = UUID.randomUUID().toString(); //TODO from firebase (unless private)
+            photo.path = this.photoFilePath;
+            photo.albumId = Album.PRIVATE_ALBUM_ID;
 
-                    p.save(imageBitmap, "test");
+            GalleryDatabase.initialize(this);
 
-            // saveToInternalStorage(imageBitmap);
+            //if is private
+            new GalleryDatabase.InsertPhotoTask().execute(photo);
         }
     }
 

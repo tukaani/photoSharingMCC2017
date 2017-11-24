@@ -8,7 +8,7 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 
-@Entity(indices = @Index("albumKey"))
+@Entity(indices = @Index("albumId"))
 public class Photo {
 
     public static final int PEOPLE_NA = -1;
@@ -17,11 +17,13 @@ public class Photo {
 
     @PrimaryKey
     @NonNull
-    public String photoKey = "";
+    public String photoId = "";
     public String author;
     public String path;
-    public int peopleAppearance = PEOPLE_NA;
-    public String albumKey;
+    public int people = PEOPLE_NA;
+    public String albumId;
+    public int localResolution;
+    public int resolution;
 
     public static class Extended implements Diffable<Extended>, CategoryItem {
 
@@ -36,7 +38,7 @@ public class Photo {
         @Override
         public boolean isTheSameAs(Extended other) {
             return this.itemType == other.itemType
-                    && TextUtils.equals(this.photo.photoKey, other.photo.photoKey);
+                    && TextUtils.equals(this.photo.photoId, other.photo.photoId);
         }
 
         @Override
@@ -44,9 +46,9 @@ public class Photo {
             if (this.itemType != other.itemType) return false;
 
             if (this.itemType != TYPE_ITEM)
-                return TextUtils.equals(this.photo.photoKey, other.photo.photoKey);
+                return TextUtils.equals(this.photo.photoId, other.photo.photoId);
 
-            if (this.photo.peopleAppearance != other.photo.peopleAppearance) return false;
+            if (this.photo.people != other.photo.people) return false;
             if (!TextUtils.equals(this.photo.path, other.photo.path)) return false;
             if (!TextUtils.equals(this.photo.author, other.photo.author)) return false;
 

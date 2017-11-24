@@ -26,4 +26,6 @@
     <string name="no_people">No people</string>
     <string name="people">People</string>
     <string name="uncategorized">(uncategorized)</string>
+    <string name="file_does_not_exists">The image file does not exist. Do you want to remove this item?</string>
+    <string name="ok">OK</string>
 </resources>

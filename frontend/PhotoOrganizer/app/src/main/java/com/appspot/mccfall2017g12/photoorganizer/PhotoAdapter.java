@@ -49,7 +49,7 @@ public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.Vie
         Context context = holder.photoImageView.getContext();
 
         Picasso.with(context)
-                .load(photo.path)
+                .load("file://" + photo.path)
                 .config(Bitmap.Config.RGB_565)
                 .into(holder.photoImageView);
     }
@@ -67,7 +67,7 @@ public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.Vie
                 title = header.photo.author;
                 break;
             case Photo.Extended.TYPE_PEOPLE_HEADER:
-                title = getPeopleAppearanceDescription(context, header.photo.peopleAppearance);
+                title = getPeopleDescription(context, header.photo.people);
                 break;
             default:
                 title = null;
@@ -77,10 +77,10 @@ public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.Vie
         holder.headerTextView.setText(title);
     }
 
-    private String getPeopleAppearanceDescription(Context context, int peopleAppearance) {
+    private String getPeopleDescription(Context context, int people) {
         @StringRes
         int res;
-        switch (peopleAppearance) {
+        switch (people) {
             case Photo.PEOPLE_NA:
                 res = R.string.uncategorized;
                 break;

@@ -27,7 +27,7 @@ public class GalleryActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 int position = GalleryActivity.this.recyclerView.getChildAdapterPosition(view);
-                String albumKey = GalleryActivity.this.adapter.getItem(position).album.albumKey;
+                String albumKey = GalleryActivity.this.adapter.getItem(position).album.albumId;
 
                 Intent intent = new Intent(GalleryActivity.this, AlbumActivity.class);
                 intent.putExtra(AlbumActivity.EXTRA_ALBUM, albumKey);
@@ -50,11 +50,11 @@ public class GalleryActivity extends AppCompatActivity {
         //TODO Remove
         {
             Album album1 = new Album();
-            album1.albumKey = Album.PRIVATE_ALBUM_KEY;
+            album1.albumId = Album.PRIVATE_ALBUM_ID;
             album1.name = "Private";
 
             Album album2 = new Album();
-            album2.albumKey = "a1";
+            album2.albumId = "a1";
             album2.name = "Happy Hour";
 
             new GalleryDatabase.InsertAlbumTask().execute(album1, album2);

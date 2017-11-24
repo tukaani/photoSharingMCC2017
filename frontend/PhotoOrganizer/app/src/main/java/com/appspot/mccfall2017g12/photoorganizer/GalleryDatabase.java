@@ -42,7 +42,7 @@ public abstract class GalleryDatabase extends RoomDatabase {
         protected LiveData<Photo.Extended[]> doInBackground(String... params) {
             String albumKey = params[0];
             return GalleryDatabase.getInstance().galleryDao()
-                    .loadAlbumsPhotosByPeopleAppearance(albumKey);
+                    .loadAlbumsPhotosByPeople(albumKey);
         }
     }
 
@@ -69,6 +69,15 @@ public abstract class GalleryDatabase extends RoomDatabase {
         @Override
         protected Void doInBackground(Album... albums) {
             GalleryDatabase.getInstance().galleryDao().insertAlbums(albums);
+            return null;
+        }
+    }
+
+    public static class DeletePhotoTask extends RelayPostExecutionTask<Photo, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Photo... photos) {
+            GalleryDatabase.getInstance().galleryDao().deletePhotos(photos);
             return null;
         }
     }

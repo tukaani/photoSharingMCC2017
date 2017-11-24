@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -13,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import java.io.File;
 import java.util.Random;
 import java.util.UUID;
 
@@ -23,7 +26,7 @@ public class AlbumActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private PhotoAdapter adapter;
-    private String albumKey;
+    private String albumId;
     private final LoadItemsPostExecutor loadItemsPostExecutor = new LoadItemsPostExecutor();
 
     @Override
@@ -36,7 +39,7 @@ public class AlbumActivity extends AppCompatActivity {
         Intent intent = getIntent();
 
         if (intent.hasExtra(EXTRA_ALBUM))
-            this.albumKey = getIntent().getStringExtra(EXTRA_ALBUM);
+            this.albumId = getIntent().getStringExtra(EXTRA_ALBUM);
         else
             throw new IllegalArgumentException("Album key missing.");
 
@@ -47,10 +50,28 @@ public class AlbumActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 int position = AlbumActivity.this.recyclerView.getChildAdapterPosition(view);
-                Photo photo = AlbumActivity.this.adapter.getItem(position).photo;
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(Uri.parse(photo.path), "image/*");
-                startActivity(intent);
+                final Photo photo = AlbumActivity.this.adapter.getItem(position).photo;
+
+                File file = new File(photo.path);
+                if (file.exists()) {
+                    Uri uri = FileProvider.getUriForFile(AlbumActivity.this,
+                            BuildConfig.APPLICATION_ID + ".provider", file);
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setDataAndType(uri, "image/*");
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(intent);
+                }
+                else {
+                    Snackbar snackbar = Snackbar.make(AlbumActivity.this.recyclerView,
+                            R.string.file_does_not_exists, Snackbar.LENGTH_SHORT);
+                    snackbar.setAction(R.string.ok, new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            new GalleryDatabase.DeletePhotoTask().execute(photo);
+                        }
+                    });
+                    snackbar.show();
+                }
             }
         });
         this.recyclerView.setAdapter(this.adapter);
@@ -69,7 +90,7 @@ public class AlbumActivity extends AppCompatActivity {
         GalleryDatabase.initialize(getApplicationContext());
         new GalleryDatabase.LoadPhotosByPeopleTask()
                 .with(this.loadItemsPostExecutor)
-                .execute(this.albumKey);
+                .execute(this.albumId);
 
         //TODO Remove
         {
@@ -103,12 +124,12 @@ public class AlbumActivity extends AppCompatActivity {
             case R.id.sortByAuthorItem:
                 new GalleryDatabase.LoadPhotosByAuthorTask()
                         .with(this.loadItemsPostExecutor)
-                        .execute(this.albumKey);
+                        .execute(this.albumId);
                 return true;
             case R.id.sortByPeopleItem:
                 new GalleryDatabase.LoadPhotosByPeopleTask()
                         .with(this.loadItemsPostExecutor)
-                        .execute(this.albumKey);
+                        .execute(this.albumId);
                 return true;
         }
 
@@ -126,14 +147,14 @@ public class AlbumActivity extends AppCompatActivity {
                     Uri uri = data.getData();
 
                     Photo photo = new Photo();
-                    photo.photoKey = UUID.randomUUID().toString();
+                    photo.photoId = UUID.randomUUID().toString();
                     photo.path = uri.toString();
-                    photo.albumKey = albumKey;
+                    photo.albumId = albumId;
                     Random random = new Random();
                     photo.author = new String[] {
                             "Frodo", "Sam", "Merry", "Pippin"
                     }[random.nextInt(4)];
-                    photo.peopleAppearance = new int[] {
+                    photo.people = new int[] {
                             Photo.PEOPLE_NA, Photo.PEOPLE_NO, Photo.PEOPLE_YES
                     }[random.nextInt(3)];
 

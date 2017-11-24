@@ -46,12 +46,12 @@ public class AlbumAdapter extends LiveDataAdapter<Album.Extended, AlbumAdapter.V
                 String.format(Locale.getDefault(),"%1$d", albumExt.photoCount));
 
         holder.inCloudImageView.setImageResource(
-                TextUtils.equals(albumExt.album.albumKey, Album.PRIVATE_ALBUM_KEY) ?
+                TextUtils.equals(albumExt.album.albumId, Album.PRIVATE_ALBUM_ID) ?
                 R.drawable.ic_cloud_off_black_24dp :
                 R.drawable.ic_cloud_queue_black_24dp);
 
         Picasso.with(context)
-                .load(albumExt.path)
+                .load("file://" + albumExt.path)
                 .config(Bitmap.Config.RGB_565)
                 .into(holder.albumCoverImageView);
     }
