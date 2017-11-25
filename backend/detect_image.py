@@ -1,11 +1,10 @@
-#
+"""
 # Authors: Kalaiarasan Saminathan <kalaiarasan.saminathan@aalto.fi>,
 #          Tuukka Rouhiainen <tuukka.rouhiainen@gmail.com>
 #
 # Copyright (c) 2017 Aalto University, Finland
 #                    All rights reserved
-
-import base64
+"""
 from google_service import Service
 
 #ACCESS_TOKEN = os.environ.get('VISION_API')

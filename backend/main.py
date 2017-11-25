@@ -1,10 +1,10 @@
-#
+""""#
 # Authors: Kalaiarasan Saminathan <kalaiarasan.saminathan@aalto.fi>,
 #          Tuukka Rouhiainen <tuukka.rouhiainen@gmail.com>
 #
 # Copyright (c) 2017 Aalto University, Finland
 #                    All rights reserved
-
+"""
 import logging
 import base64
 import http
@@ -13,7 +13,8 @@ import requests
 from flask import Flask, request, session, redirect, url_for, jsonify
 from flask import render_template
 import detect_image
-import persistence
+import groups
+import users
 
 app = Flask(__name__)
 app.secret_key = 'F12Zr47j3yX R~X@lH!jmM]Lwf/,?KT'
@@ -46,7 +47,7 @@ def create_group():
         author = content['author']
         group_name = content['group_name']
         valid_hours = content['validity']
-        group_id, token = persistence.create(
+        group_id, token = groups.create(
             group_name=group_name, validity=valid_hours, author=author)
         return jsonify({'group_id': str(group_id), 'token': token})
     except Exception as ex:
@@ -64,7 +65,7 @@ def join_group():
         content = request.get_json()
         group_id = content['group_id']
         user_id = content['user_id']
-        token = persistence.update(group_id=group_id, user_id=user_id)
+        token = groups.update(group_id=group_id, user_id=user_id)
         return jsonify({'refreshedtoken': token})
     except Exception as ex:
         logging.exception(ex)
@@ -81,7 +82,7 @@ def delete_group():
         content = request.get_json()
         group_id = content['group_id']
         user_id = content['user_id']
-        persistence.delete(group_id=group_id, user_id=user_id)
+        groups.delete(group_id=group_id, user_id=user_id)
         return jsonify({'status': "success"})
     except Exception as ex:
         logging.exception(ex)
@@ -158,6 +159,7 @@ def login():
     try:
         email = request.form['email']
         input_password = request.form['password']
+        users.get_user_by_email(email_id=email)
         session.clear()
         session["user"] = email
         return render_template("filemanager/dashboard.html")

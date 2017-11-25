@@ -1,13 +1,14 @@
-#
+""""#
 # Authors: Kalaiarasan Saminathan <kalaiarasan.saminathan@aalto.fi>,
 #          Tuukka Rouhiainen <tuukka.rouhiainen@gmail.com>
 #
 # Copyright (c) 2017 Aalto University, Finland
 #                    All rights reserved
-
+"""
 import os
-from pyrebase import pyrebase
 import uuid
+from pyrebase import pyrebase
+
 
 API_KEY = os.environ.get('API_KEY')
 AUTH_DOMAIN = os.environ.get('AUTH_DOMAIN')
