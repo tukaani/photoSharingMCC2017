@@ -25,7 +25,7 @@ public abstract class LiveDataAdapter<T extends Diffable<T>, VH extends Recycler
 
     public void setLiveData(LiveData<T[]> liveData) {
         if (this.liveData != null) {
-            this.liveData.removeObservers(this.owner);
+            this.liveData.removeObserver(this.itemsObserver);
         }
         this.liveData = liveData;
         this.liveData.observe(this.owner, this.itemsObserver);
