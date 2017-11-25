@@ -11,7 +11,7 @@ from google_service import Service
 #ACCESS_TOKEN = os.environ.get('VISION_API')
 
 # TODO: Remove it ..Local Testing
-ACCESS_TOKEN = "AIzaSyD_xI4WpcVcd7Um7cPqv2c57SSKsqbz94U"
+ACCESS_TOKEN = "AIzaSyAcSZ3-4igzr60jZzSuRa7tUFHr02c9OPQ"
 
 
 def detect_face(image_content):

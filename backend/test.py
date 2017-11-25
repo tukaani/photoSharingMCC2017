@@ -7,6 +7,7 @@
 
 import os
 from pyrebase import pyrebase
+import uuid
 
 API_KEY = os.environ.get('API_KEY')
 AUTH_DOMAIN = os.environ.get('AUTH_DOMAIN')
@@ -14,16 +15,19 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 STORAGE_BUCKET = os.environ.get('STORAGE_BUCKET')
 
 firebase_config = {
-    "apiKey": "AIzaSyCI5mlV-G0tu0u0wHQr5AdWHGWoXpC_bbo",
-    "authDomain": "polar-scene-149514.firebaseapp.com",
-    "databaseURL": "https://polar-scene-149514.firebaseio.com",
-    "projectId": "polar-scene-149514",
-    "storageBucket": "polar-scene-149514.appspot.com",
-    "serviceAccount": os.path.dirname(os.path.abspath(__file__)) + "/polar-scene-149514-firebase.json"
+    "apiKey": "AIzaSyAGqgZpYbVbn2SwH1T-RjXQ3zJ0rttOY5I",
+    "authDomain": "fir-functions-test-c85f9.firebaseapp.com",
+    "databaseURL": "https://fir-functions-test-c85f9.firebaseio.com",
+    "projectId": "fir-functions-test-c85f9",
+    "storageBucket": "fir-functions-test-c85f9.appspot.com",
+    "serviceAccount": os.path.dirname(os.path.abspath(__file__)) + "/key.json"
 }
+
 
 firebase = pyrebase.initialize_app(firebase_config)
 
 db = firebase.database()
 data = {"name": "Mortimer 'Morty' Smith"}
 db.child("users").push(data)
+
+print(uuid.uuid4())
