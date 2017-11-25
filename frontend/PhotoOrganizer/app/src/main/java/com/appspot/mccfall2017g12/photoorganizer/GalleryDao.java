@@ -54,7 +54,7 @@ public abstract class GalleryDao {
             return photo.file; // File changed, the old file is no longer used.
         }
 
-        if (resolution == photo.resolution && TextUtils.equals(file, photo.file))
+        if (TextUtils.equals(file, photo.file))
             return null; // The file is the same as the old one. No file should be deleted.
 
         return file; // The new file is not used because it does not improve resolution.
