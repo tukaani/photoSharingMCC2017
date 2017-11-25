@@ -15,8 +15,8 @@ import com.squareup.picasso.Picasso;
 
 import java.io.File;
 
-public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.ViewHolder,
-        PhotoAdapter.ViewHolder.Header, PhotoAdapter.ViewHolder.Item> {
+public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.HeaderViewHolder,
+        PhotoAdapter.ItemViewHolder> {
 
     private final View.OnClickListener onClickListener;
 
@@ -27,25 +27,25 @@ public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.Vie
     }
 
     @Override
-    public ViewHolder.Item onCreateItemViewHolder(ViewGroup parent) {
+    public ItemViewHolder onCreateItemViewHolder(ViewGroup parent) {
         View view = LayoutInflater
                 .from(parent.getContext())
                 .inflate(R.layout.layout_photo_item, parent, false);
         if (onClickListener != null)
             view.setOnClickListener(onClickListener);
-        return new ViewHolder.Item(view);
+        return new ItemViewHolder(view);
     }
 
     @Override
-    public ViewHolder.Header onCreateHeaderViewHolder(ViewGroup parent) {
+    public HeaderViewHolder onCreateHeaderViewHolder(ViewGroup parent) {
         View view = LayoutInflater
                 .from(parent.getContext())
                 .inflate(R.layout.layout_photo_header, parent, false);
-        return new ViewHolder.Header(view);
+        return new HeaderViewHolder(view);
     }
 
     @Override
-    public void onBindItemViewHolder(ViewHolder.Item holder, int position) {
+    public void onBindItemViewHolder(ItemViewHolder holder, int position) {
         Photo photo = getItem(position).photo;
 
         Context context = holder.photoImageView.getContext();
@@ -58,7 +58,7 @@ public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.Vie
     }
 
     @Override
-    public void onBindHeaderViewHolder(ViewHolder.Header holder, int position) {
+    public void onBindHeaderViewHolder(HeaderViewHolder holder, int position) {
         Photo.Extended header = getItem(position);
 
         Context context = holder.headerTextView.getContext();
@@ -67,7 +67,7 @@ public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.Vie
 
         switch (header.itemType) {
             case Photo.Extended.TYPE_AUTHOR_HEADER:
-                title = header.photo.author;
+                title = getAuthorDescription(context, header.photo.author);
                 break;
             case Photo.Extended.TYPE_PEOPLE_HEADER:
                 title = getPeopleDescription(context, header.photo.people);
@@ -78,6 +78,12 @@ public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.Vie
         }
 
         holder.headerTextView.setText(title);
+    }
+
+    private String getAuthorDescription(Context context, String author) {
+        if (author == null)
+            return context.getString(R.string.unknown);
+        return author;
     }
 
     private String getPeopleDescription(Context context, int people) {
@@ -99,28 +105,21 @@ public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.Vie
         return context.getString(res);
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ItemViewHolder extends RecyclerView.ViewHolder {
+        final ImageView photoImageView;
 
-        public ViewHolder(View view) {
+        public ItemViewHolder(View view) {
             super(view);
+            this.photoImageView = view.findViewById(R.id.photoImageView);
         }
+    }
 
-        public static class Item extends ViewHolder {
-            final ImageView photoImageView;
+    public static class HeaderViewHolder extends RecyclerView.ViewHolder {
+        final TextView headerTextView;
 
-            public Item(View view) {
-                super(view);
-                this.photoImageView = view.findViewById(R.id.photoImageView);
-            }
-        }
-
-        public static class Header extends ViewHolder {
-            final TextView headerTextView;
-
-            public Header(View view) {
-                super(view);
-                this.headerTextView = view.findViewById(R.id.headerTextView);
-            }
+        public HeaderViewHolder(View view) {
+            super(view);
+            this.headerTextView = view.findViewById(R.id.headerTextView);
         }
     }
 }

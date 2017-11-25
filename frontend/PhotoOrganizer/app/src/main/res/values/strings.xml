@@ -28,4 +28,5 @@
     <string name="uncategorized">(uncategorized)</string>
     <string name="file_does_not_exists">The image file does not exist. Do you want to remove this item?</string>
     <string name="remove">Remove</string>
+    <string name="unknown">(unknown)</string>
 </resources>

@@ -5,8 +5,8 @@ import android.support.v7.widget.RecyclerView;
 import android.view.ViewGroup;
 
 public abstract class HeaderAdapter<T extends Diffable<T> & CategoryItem,
-        VH extends RecyclerView.ViewHolder, HeaderVH extends VH, ItemVH extends VH>
-        extends LiveDataAdapter<T, VH> {
+        HeaderVH extends RecyclerView.ViewHolder, ItemVH extends RecyclerView.ViewHolder>
+        extends LiveDataAdapter<T, RecyclerView.ViewHolder> {
 
     public final static int TYPE_ITEM = 0;
     public final static int TYPE_HEADER = 1;
@@ -21,7 +21,7 @@ public abstract class HeaderAdapter<T extends Diffable<T> & CategoryItem,
     }
 
     @Override
-    public VH onCreateViewHolder(ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         switch (viewType) {
             case TYPE_HEADER:
                 return onCreateHeaderViewHolder(parent);
@@ -34,7 +34,7 @@ public abstract class HeaderAdapter<T extends Diffable<T> & CategoryItem,
 
     @SuppressWarnings("unchecked")
     @Override
-    public void onBindViewHolder(VH holder, int position) {
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         int viewType = getItemViewType(position);
 
         switch (viewType) {
