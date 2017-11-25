@@ -8,6 +8,7 @@ import datetime
 import uuid
 import os
 import pyrebase
+from urllib import parse
 
 API_KEY = os.environ.get('API_KEY')
 AUTH_DOMAIN = os.environ.get('AUTH_DOMAIN')
@@ -58,7 +59,7 @@ def update(group_id, user_id):
         group_id).child("members").get().val()
 
     if user_id in all_users:
-        raise ValueError("user already joined the group")
+        raise ValueError("user has already joined the group")
 
     all_users.append(user_id)
     database.child("group").child(
@@ -74,6 +75,11 @@ def delete(group_id, user_id):
     if user_id == author_id:
         database.child("group").child(
             group_id).remove()
+        # FIXME: storage.list_files() can be optimized by having a metadata table which stores image urls for the group
+        for file in storage.list_files():
+            path, file = os.path.split(parse.unquote(file.path))
+            if group_id in path:
+                storage.delete(group_id + "/" + file)
     else:
         all_users = database.child("group").child(
             group_id).child("members").get().val()
