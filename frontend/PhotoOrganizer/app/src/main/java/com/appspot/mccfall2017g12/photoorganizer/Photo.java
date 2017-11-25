@@ -15,10 +15,6 @@ public class Photo {
     public static final int PEOPLE_NO = 0;
     public static final int PEOPLE_YES = 1;
 
-    public static final int LEVEL_LOW = 1;
-    public static final int LEVEL_HIGH = 2;
-    public static final int LEVEL_FULL = 3;
-
     @PrimaryKey
     @NonNull
     public String photoId = "";

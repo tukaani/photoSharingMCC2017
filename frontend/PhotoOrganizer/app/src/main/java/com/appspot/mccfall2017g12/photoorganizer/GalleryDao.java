@@ -50,7 +50,7 @@ public abstract class GalleryDao {
             return file; // No file is used because the photo does not exist.
 
         if (resolution > photo.resolution) {
-            updatePhotoFile(photo.photoId, file, resolution);
+            updatePhotoFile(photoId, file, resolution);
             return photo.file; // File changed, the old file is no longer used.
         }
 

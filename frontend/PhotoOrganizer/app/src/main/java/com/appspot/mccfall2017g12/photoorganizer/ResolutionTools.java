@@ -10,9 +10,9 @@ public class ResolutionTools {
     public final static int RESOLUTION_LOW = 480;
     public final static int RESOLUTION_HIGH = 960;
 
-    public final static int LEVEL_LOW = 1;
-    public final static int LEVEL_HIGH = 2;
-    public final static int LEVEL_FULL = 3;
+    public static final String LEVEL_LOW = "low";
+    public static final String LEVEL_HIGH = "high";
+    public static final String LEVEL_FULL = "full";
 
     /**
      * Calculates the resolution of an image file stored locally.
@@ -45,7 +45,7 @@ public class ResolutionTools {
         return (a + b - 1) / b;
     }
 
-    public static int getResolution(int resolutionLevel, int fullResolution) {
+    public static int getResolution(String resolutionLevel, int fullResolution) {
         int resolution;
 
         switch (resolutionLevel) {

@@ -1,7 +1,6 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
@@ -25,7 +24,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
     public volatile static boolean isListening = false;
 
     //TODO Should be calculated based on network state & settings
-    private final static int CURRENT_RESOLUTION_LEVEL = ResolutionTools.LEVEL_HIGH;
+    private final static String CURRENT_RESOLUTION_LEVEL = ResolutionTools.LEVEL_HIGH;
 
     public PhotoEventListener(String groupId, Context context) {
         super(Executors.newCachedThreadPool());
@@ -49,14 +48,12 @@ public class PhotoEventListener extends AsyncChildEventListener {
             fetchAndSetAuthorNameForPhotoAsync(dataSnapshot);
         }
 
-        updatePhotoPeopleAndOnlineResolution(dataSnapshot);
-        updateImageIfNecessary(photoId);
+        updatePhoto(dataSnapshot);
     }
 
     @Override
     public void onChildChangedAsync(final DataSnapshot dataSnapshot, String previousChildName) {
-        updatePhotoPeopleAndOnlineResolution(dataSnapshot);
-        updateImageIfNecessary(dataSnapshot.getKey());
+        updatePhoto(dataSnapshot);
     }
 
     @Override
@@ -85,7 +82,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
     }
 
     // Don't call from UI thread
-    private void updatePhotoPeopleAndOnlineResolution(final DataSnapshot dataSnapshot) {
+    private void updatePhoto(final DataSnapshot dataSnapshot) {
         String photoId = dataSnapshot.getKey();
         if (dataSnapshot.hasChild("people")) {
             final int people = dataSnapshot.child("people").getValue(int.class);
@@ -95,23 +92,28 @@ public class PhotoEventListener extends AsyncChildEventListener {
             final int onlineResolution = dataSnapshot.child("resolution").getValue(int.class);
             database.galleryDao().updatePhotoOnlineResolution(photoId, onlineResolution);
         }
+        if (dataSnapshot.hasChild("files/" + CURRENT_RESOLUTION_LEVEL)) {
+            updatePhotoFileIfNecessary(photoId);
+        }
     }
 
     // Don't call from UI thread
     //
     // This method will be moved and made public because it should be called for each photo
-    // (in the syncing album) whose online resolution is higher that its local resolution
+    // (in the syncing album) whose online resolution is higher than its local resolution
     // whenever settings or network changes.
-    private void updateImageIfNecessary(String photoId) {
+    private void updatePhotoFileIfNecessary(String photoId) {
         Photo photo = database.galleryDao().loadPhoto(photoId);
+
+        if (photo == null)
+            return;
 
         int targetResolution = ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL,
                 photo.onlineResolution);
 
         if (targetResolution > photo.resolution) {
             DatabaseReference photosRef = FirebaseDatabase.getInstance().getReference("photos");
-            photosRef.child(groupId).child(photoId).child("files")
-                    .child(Integer.toString(CURRENT_RESOLUTION_LEVEL))
+            photosRef.child(groupId).child(photoId).child("files").child(CURRENT_RESOLUTION_LEVEL)
                     .addListenerForSingleValueEvent(new PhotoFileListener(photoId));
         }
     }
@@ -153,6 +155,9 @@ public class PhotoEventListener extends AsyncChildEventListener {
             if (filename != null)
                 throw new IllegalStateException("PhotoFileListener can be used as a listener "
                         + "only for a single event and it cannot be reused.");
+
+            if (!dataSnapshot.exists())
+                return;
 
             filename = dataSnapshot.getValue(String.class);
 
