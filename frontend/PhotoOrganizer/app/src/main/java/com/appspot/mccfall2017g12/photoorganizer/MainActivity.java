@@ -21,7 +21,7 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
     static final int REQUEST_PHOTO = 1;
 
-    private String photoFile = null;
+    private File photoFile = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,11 +84,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void takePhoto(){
-        this.photoFile = UUID.randomUUID().toString() + ".jpg";
+        String filename = UUID.randomUUID().toString() + ".jpg";
 
-        File file = FileTools.get(this.photoFile);
+        this.photoFile = FileTools.get(filename);
         Uri uri = FileProvider.getUriForFile(this,
-                BuildConfig.APPLICATION_ID + ".provider", file);
+                BuildConfig.APPLICATION_ID + ".provider", this.photoFile);
 
         Intent takePhoto = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         takePhoto.putExtra(MediaStore.EXTRA_OUTPUT, uri);
@@ -106,9 +106,10 @@ public class MainActivity extends AppCompatActivity {
             Photo photo = new Photo();
             photo.author = "Me"; //TODO real user
             photo.photoId = UUID.randomUUID().toString(); //TODO from firebase (unless private)
-            photo.file = this.photoFile;
+            photo.file = this.photoFile.getName();
             photo.albumId = Album.PRIVATE_ALBUM_ID;
-            photo.resolution = ResolutionTools.calculateResolution(this.photoFile);
+            photo.resolution = ResolutionTools.calculateResolution(
+                    this.photoFile.getAbsolutePath());
 
             GalleryDatabase.initialize(this);
             new GalleryDatabase.InsertPhotoTask().execute(photo);

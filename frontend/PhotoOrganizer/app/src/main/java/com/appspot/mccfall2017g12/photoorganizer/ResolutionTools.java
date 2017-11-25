@@ -21,17 +21,28 @@ public class ResolutionTools {
      * {@literal REFERENCE_WIDTH} / {@literal REFERENCE_HEIGHT} and
      * which totally covers the image.
      *
-     * @param filePath Path to the image file
+     * @param filePath the image file full path
      * @return Resolution
      */
     public static int calculateResolution(String filePath) {
         BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds=true;
+        options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(filePath, options);
         if (REFERENCE_HEIGHT * options.outWidth > REFERENCE_WIDTH * options.outHeight)
-            return REFERENCE_WIDTH * options.outWidth / REFERENCE_HEIGHT;
+            return ceiledDivision(REFERENCE_HEIGHT * options.outWidth, REFERENCE_WIDTH);
         else
             return options.outHeight;
+    }
+
+    /**
+     * Returns correctly ceiled division of two integers
+     *
+     * @param a Dividend
+     * @param b Divisor
+     * @return ceil(a divided by b)
+     */
+    private static int ceiledDivision(int a, int b) {
+        return (a + b - 1) / b;
     }
 
     public static int getResolution(int resolutionLevel, int fullResolution) {

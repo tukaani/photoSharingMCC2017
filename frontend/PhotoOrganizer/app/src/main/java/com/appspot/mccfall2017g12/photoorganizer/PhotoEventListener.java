@@ -1,9 +1,9 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -14,8 +14,9 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.io.File;
+import java.util.concurrent.Executors;
 
-public class PhotoEventListener implements ChildEventListener {
+public class PhotoEventListener extends AsyncChildEventListener {
 
     private final String groupId;
     private final GalleryDatabase database;
@@ -27,6 +28,7 @@ public class PhotoEventListener implements ChildEventListener {
     private final static int CURRENT_RESOLUTION_LEVEL = ResolutionTools.LEVEL_HIGH;
 
     public PhotoEventListener(String groupId, Context context) {
+        super(Executors.newCachedThreadPool());
         this.groupId = groupId;
 
         GalleryDatabase.initialize(context);
@@ -34,47 +36,36 @@ public class PhotoEventListener implements ChildEventListener {
     }
 
     @Override
-    public void onChildAdded(final DataSnapshot dataSnapshot, String previousChildName) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
+    public void onChildAddedAsync(final DataSnapshot dataSnapshot, String previousChildName) {
+        String photoId = dataSnapshot.getKey();
 
-                String photoId = dataSnapshot.getKey();
+        Photo photo = database.galleryDao().loadPhoto(photoId);
 
-                Photo photo = database.galleryDao().loadPhoto(photoId);
+        if (photo == null) {
+            photo = new Photo();
+            photo.photoId = photoId;
+            photo.albumId = groupId;
+            database.galleryDao().insertPhotos(photo);
+            fetchAndSetAuthorNameForPhotoAsync(dataSnapshot);
+        }
 
-                if (photo == null) {
-                    photo = new Photo();
-                    photo.photoId = photoId;
-                    photo.albumId = groupId;
-                    database.galleryDao().insertPhotos(photo);
-                    fetchAndSetAuthorNameForPhotoAsync(dataSnapshot);
-                }
-
-                updatePhotoPeopleAndOnlineResolution(dataSnapshot);
-                updateImageIfNecessary(photoId);
-            }
-        }).start();
+        updatePhotoPeopleAndOnlineResolution(dataSnapshot);
+        updateImageIfNecessary(photoId);
     }
 
     @Override
-    public void onChildChanged(final DataSnapshot dataSnapshot, String previousChildName) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                updatePhotoPeopleAndOnlineResolution(dataSnapshot);
-                updateImageIfNecessary(dataSnapshot.getKey());
-            }
-        }).start();
+    public void onChildChangedAsync(final DataSnapshot dataSnapshot, String previousChildName) {
+        updatePhotoPeopleAndOnlineResolution(dataSnapshot);
+        updateImageIfNecessary(dataSnapshot.getKey());
     }
 
     @Override
-    public void onChildRemoved(DataSnapshot dataSnapshot) {
+    public void onChildRemovedAsync(DataSnapshot dataSnapshot) {
 
     }
 
     @Override
-    public void onChildMoved(DataSnapshot dataSnapshot, String previousChildName) {
+    public void onChildMovedAsync(DataSnapshot dataSnapshot, String previousChildName) {
 
     }
 
@@ -107,6 +98,10 @@ public class PhotoEventListener implements ChildEventListener {
     }
 
     // Don't call from UI thread
+    //
+    // This method will be moved and made public because it should be called for each photo
+    // (in the syncing album) whose online resolution is higher that its local resolution
+    // whenever settings or network changes.
     private void updateImageIfNecessary(String photoId) {
         Photo photo = database.galleryDao().loadPhoto(photoId);
 
@@ -117,29 +112,24 @@ public class PhotoEventListener implements ChildEventListener {
             DatabaseReference photosRef = FirebaseDatabase.getInstance().getReference("photos");
             photosRef.child(groupId).child(photoId).child("files")
                     .child(Integer.toString(CURRENT_RESOLUTION_LEVEL))
-                    .addListenerForSingleValueEvent(
-                            new PhotoFileListener(photoId, targetResolution));
+                    .addListenerForSingleValueEvent(new PhotoFileListener(photoId));
         }
     }
 
-    private class UserNameEventListener implements ValueEventListener {
+    private class UserNameEventListener extends AsyncValueEventListener {
 
         private final String photoId;
 
         public UserNameEventListener(String photoId) {
+            super(executor);
 
             this.photoId = photoId;
         }
 
         @Override
-        public void onDataChange(final DataSnapshot dataSnapshot) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    String userName = dataSnapshot.getValue(String.class);
-                    database.galleryDao().updatePhotoAuthor(photoId, userName);
-                }
-            }).start();
+        public void onDataChangeAsync(final DataSnapshot dataSnapshot) {
+            String userName = dataSnapshot.getValue(String.class);
+            database.galleryDao().updatePhotoAuthor(photoId, userName);
         }
 
         @Override
@@ -152,24 +142,25 @@ public class PhotoEventListener implements ChildEventListener {
             OnSuccessListener<FileDownloadTask.TaskSnapshot> {
 
         private final String photoId;
-        private final int resolution;
         private String filename;
 
-        public PhotoFileListener(String photoId, int resolution) {
-
+        public PhotoFileListener(String photoId) {
             this.photoId = photoId;
-            this.resolution = resolution;
         }
 
         @Override
         public void onDataChange(final DataSnapshot dataSnapshot) {
-            this.filename = dataSnapshot.getValue(String.class);
+            if (filename != null)
+                throw new IllegalStateException("PhotoFileListener can be used as a listener "
+                        + "only for a single event and it cannot be reused.");
+
+            filename = dataSnapshot.getValue(String.class);
 
             StorageReference imagesRef = FirebaseStorage.getInstance().getReference("images");
             StorageReference fileRef = imagesRef.child(groupId).child(filename);
 
             File localFile = FileTools.get(filename);
-            fileRef.getFile(localFile).addOnSuccessListener(PhotoFileListener.this);
+            fileRef.getFile(localFile).addOnSuccessListener(this);
         }
 
         @Override
@@ -181,13 +172,20 @@ public class PhotoEventListener implements ChildEventListener {
         public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
             final String filename = this.filename;
 
-            new Thread(new Runnable() {
+            executor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    if (!database.galleryDao().tryUpdatePhotoFile(photoId, filename, resolution))
-                        FileTools.get(filename).delete();
+                    File localFile = FileTools.get(filename);
+                    int resolution = ResolutionTools.calculateResolution(
+                            localFile.getAbsolutePath());
+
+                    String fileToBeRemoved = database.galleryDao()
+                            .tryUpdatePhotoFile(photoId, filename, resolution);
+
+                    if (fileToBeRemoved != null)
+                        FileTools.get(fileToBeRemoved).delete();
                 }
-            }).start();
+            });
         }
     }
 }

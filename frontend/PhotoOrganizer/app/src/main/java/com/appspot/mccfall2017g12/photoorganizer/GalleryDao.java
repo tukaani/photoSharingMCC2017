@@ -7,6 +7,9 @@ import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
 import android.arch.persistence.room.Transaction;
 import android.arch.lifecycle.LiveData;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
+import android.util.Log;
 
 @Dao
 public abstract class GalleryDao {
@@ -29,16 +32,32 @@ public abstract class GalleryDao {
     @Query("UPDATE Photo SET author = :author WHERE photoId = :photoId")
     public abstract void updatePhotoAuthor(String photoId, String author);
 
+    /**
+     * Changes the image file of a photo if the new image file has a higher resolution than
+     * the old one.
+     *
+     * @param photoId ID of the photo
+     * @param file Name of the new file
+     * @param resolution Resolution of the new file
+     * @return The file that is NOT used anymore and thus, can be deleted. Can be null.
+     */
     @Transaction
-    public boolean tryUpdatePhotoFile(String photoId, String file, int resolution) {
+    @Nullable
+    public String tryUpdatePhotoFile(String photoId, String file, int resolution) {
         Photo photo = loadPhoto(photoId);
-        if (photo == null || resolution < photo.resolution)
-            return false;
 
-        if (resolution > photo.resolution)
+        if (photo == null)
+            return file; // No file is used because the photo does not exist.
+
+        if (resolution > photo.resolution) {
             updatePhotoFile(photo.photoId, file, resolution);
+            return photo.file; // File changed, the old file is no longer used.
+        }
 
-        return true;
+        if (resolution == photo.resolution && TextUtils.equals(file, photo.file))
+            return null; // The file is the same as the old one. No file should be deleted.
+
+        return file; // The new file is not used because it does not improve resolution.
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
