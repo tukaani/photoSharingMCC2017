@@ -29,21 +29,54 @@ auth = firebase.auth()
 storage = firebase.storage()
 
 
-def create(group_name, validity):
-    """Create a directory to store group images"""
+def create(group_name, validity, author):
+    """Create a group and directory to store group images"""
     token = str(uuid.uuid4())
     data = {"name": group_name,
+            "author": author,
             "start_time": str(datetime.datetime.now()),
             "end_time": str(datetime.datetime.now() + datetime.timedelta(hours=validity)),
-            "token": token}
+            "token": token,
+            "members": [author]}
     group_id = database.child("group").push(data)
-    #storage.child(group_name + "/.keep").put(".keep")
+
+    # Firebase will not allows to create an empty directory
+    storage.child(group_id['name'] + "/.keep").put(".keep")
     return group_id['name'], token
 
 
-def update(group_id):
-    """Create a directory to store group images"""
+def update(group_id, user_id):
+    """Add an user to the group"""
     token = str(uuid.uuid4())
     data = {"token": token}
+
+    # Update one time token
     database.child("group").child(group_id).update(data)
+
+    # Update members
+    all_users = database.child("group").child(
+        group_id).child("members").get().val()
+
+    if user_id in all_users:
+        raise ValueError("user already joined the group")
+
+    all_users.append(user_id)
+    database.child("group").child(
+        group_id).child("members").set(all_users)
     return token
+
+
+def delete(group_id, user_id):
+    """Delete a group (if user is an author of the group or remove the user from members list"""
+    author_id = database.child("group").child(
+        group_id).child("author").get().val()
+
+    if user_id == author_id:
+        database.child("group").child(
+            group_id).remove()
+    else:
+        all_users = database.child("group").child(
+            group_id).child("members").get().val()
+        all_users.remove(user_id)
+        database.child("group").child(
+            group_id).child("members").set(all_users)

@@ -43,10 +43,11 @@ def create_group():
     """Create a photo sharing group"""
     try:
         content = request.get_json()
+        author = content['author']
         group_name = content['group_name']
         valid_hours = content['validity']
         group_id, token = persistence.create(
-            group_name=group_name, validity=valid_hours)
+            group_name=group_name, validity=valid_hours, author=author)
         return jsonify({'group_id': str(group_id), 'token': token})
     except Exception as ex:
         logging.exception(ex)
@@ -62,7 +63,8 @@ def join_group():
     try:
         content = request.get_json()
         group_id = content['group_id']
-        token = persistence.update(group_id)
+        user_id = content['user_id']
+        token = persistence.update(group_id=group_id, user_id=user_id)
         return jsonify({'refreshedtoken': token})
     except Exception as ex:
         logging.exception(ex)
@@ -75,7 +77,18 @@ def join_group():
 @app.route('/photoorganizer/api/v1.0/group/delete', methods=['GET', 'POST'])
 def delete_group():
     """" Delete the group and images """
-    return jsonify({'status': "Not implemented"})
+    try:
+        content = request.get_json()
+        group_id = content['group_id']
+        user_id = content['user_id']
+        persistence.delete(group_id=group_id, user_id=user_id)
+        return jsonify({'status': "success"})
+    except Exception as ex:
+        logging.exception(ex)
+        return jsonify({
+            'status': http.HTTPStatus.BAD_REQUEST,
+            'error': "Bad Request"
+        })
 
 
 @app.route('/photoorganizer/api/v1.0/process', methods=['GET', 'POST'])
