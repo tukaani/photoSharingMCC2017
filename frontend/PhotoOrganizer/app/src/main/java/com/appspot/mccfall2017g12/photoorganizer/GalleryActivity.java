@@ -20,6 +20,8 @@ public class GalleryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gallery);
 
+        GalleryDatabase.initialize(this );
+
         this.recyclerView = findViewById(R.id.albums_recycler_view);
         this.recyclerView.setHasFixedSize(true);
 
@@ -39,7 +41,7 @@ public class GalleryActivity extends AppCompatActivity {
         GridLayoutManager layoutManager = new GridLayoutManager(this, COLUMN_COUNT);
         this.recyclerView.setLayoutManager(layoutManager);
 
-        new GalleryDatabase.LoadAlbumsTask(this).with(new PostExecutor<LiveData<Album.Extended[]>>() {
+        new GalleryDatabase.LoadAlbumsTask().with(new PostExecutor<LiveData<Album.Extended[]>>() {
             @Override
             public void onPostExecute(LiveData<Album.Extended[]> liveData) {
                 GalleryActivity.this.adapter.setLiveData(liveData);
@@ -56,7 +58,7 @@ public class GalleryActivity extends AppCompatActivity {
             album2.albumId = "a1";
             album2.name = "Happy Hour";
 
-            new GalleryDatabase.InsertAlbumTask(this).execute(album1, album2);
+            new GalleryDatabase.InsertAlbumTask().execute(album1, album2);
         }
     }
 }

@@ -27,16 +27,9 @@ public abstract class GalleryDatabase extends RoomDatabase {
     public abstract static class Task<Params, Result>
             extends RelayPostExecutionTask<Params, Void, Result> {
 
-        public Task(Context context) {
-            GalleryDatabase.initialize(context);
-        }
     }
 
     public static class LoadPhotosByAuthorTask extends Task<String, LiveData<Photo.Extended[]>> {
-
-        public LoadPhotosByAuthorTask(Context context) {
-            super(context);
-        }
 
         @Override
         protected LiveData<Photo.Extended[]> doInBackground(String... params) {
@@ -49,10 +42,6 @@ public abstract class GalleryDatabase extends RoomDatabase {
 
     public static class LoadPhotosByPeopleTask extends Task<String, LiveData<Photo.Extended[]>> {
 
-        public LoadPhotosByPeopleTask(Context context) {
-            super(context);
-        }
-
         @Override
         protected LiveData<Photo.Extended[]> doInBackground(String... params) {
             String albumKey = params[0];
@@ -63,10 +52,6 @@ public abstract class GalleryDatabase extends RoomDatabase {
 
     public static class LoadAlbumsTask extends Task<Void, LiveData<Album.Extended[]>> {
 
-        public LoadAlbumsTask(Context context) {
-            super(context);
-        }
-
         @Override
         protected LiveData<Album.Extended[]> doInBackground(Void... voids) {
             return GalleryDatabase.getInstance().galleryDao().loadAllAlbums();
@@ -74,10 +59,6 @@ public abstract class GalleryDatabase extends RoomDatabase {
     }
 
     public static class InsertPhotoTask extends Task<Photo, Void> {
-
-        public InsertPhotoTask(Context context) {
-            super(context);
-        }
 
         @Override
         protected Void doInBackground(Photo... photos) {
@@ -88,10 +69,6 @@ public abstract class GalleryDatabase extends RoomDatabase {
 
     public static class InsertAlbumTask extends Task<Album, Void> {
 
-        public InsertAlbumTask(Context context) {
-            super(context);
-        }
-
         @Override
         protected Void doInBackground(Album... albums) {
             GalleryDatabase.getInstance().galleryDao().insertAlbums(albums);
@@ -101,14 +78,19 @@ public abstract class GalleryDatabase extends RoomDatabase {
 
     public static class DeletePhotoTask extends Task<Photo, Void> {
 
-        public DeletePhotoTask(Context context) {
-            super(context);
-        }
-
         @Override
         protected Void doInBackground(Photo... photos) {
             GalleryDatabase.getInstance().galleryDao().deletePhotos(photos);
             return null;
+        }
+    }
+
+    public static class LoadPhotoTask extends Task<String, Photo> {
+
+        @Override
+        protected Photo doInBackground(String... photoIds) {
+            String photoId = photoIds[0];
+            return GalleryDatabase.getInstance().galleryDao().loadPhoto(photoId);
         }
     }
 }

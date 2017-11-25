@@ -13,6 +13,7 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.util.Locale;
 
 public class AlbumAdapter extends LiveDataAdapter<Album.Extended, AlbumAdapter.ViewHolder> {
@@ -50,10 +51,11 @@ public class AlbumAdapter extends LiveDataAdapter<Album.Extended, AlbumAdapter.V
                 R.drawable.ic_cloud_off_black_24dp :
                 R.drawable.ic_cloud_queue_black_24dp);
 
-        Picasso.with(context)
-                .load("file://" + albumExt.path)
-                .config(Bitmap.Config.RGB_565)
-                .into(holder.albumCoverImageView);
+        if (albumExt.file != null)
+            Picasso.with(context)
+                    .load(FileTools.get(albumExt.file))
+                    .config(Bitmap.Config.RGB_565)
+                    .into(holder.albumCoverImageView);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

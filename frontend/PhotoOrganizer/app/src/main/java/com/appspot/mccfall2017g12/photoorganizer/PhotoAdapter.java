@@ -13,6 +13,8 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
+
 public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.ViewHolder,
         PhotoAdapter.ViewHolder.Header, PhotoAdapter.ViewHolder.Item> {
 
@@ -48,10 +50,11 @@ public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.Vie
 
         Context context = holder.photoImageView.getContext();
 
-        Picasso.with(context)
-                .load("file://" + photo.path)
-                .config(Bitmap.Config.RGB_565)
-                .into(holder.photoImageView);
+        if (photo.file != null)
+            Picasso.with(context)
+                    .load(FileTools.get(photo.file))
+                    .config(Bitmap.Config.RGB_565)
+                    .into(holder.photoImageView);
     }
 
     @Override

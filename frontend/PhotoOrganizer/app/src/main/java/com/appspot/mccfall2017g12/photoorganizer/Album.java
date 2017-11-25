@@ -20,7 +20,7 @@ public class Album {
 
         @Embedded
         public Album album;
-        public String path;
+        public String file;
         public int photoCount = 0;
 
         @Override
@@ -32,7 +32,7 @@ public class Album {
         public boolean hasTheSameContentAs(Extended other) {
             if (this.photoCount != other.photoCount) return false;
             if (!TextUtils.equals(this.album.name, other.album.name)) return false;
-            if (!TextUtils.equals(this.path, other.path)) return false;
+            if (!TextUtils.equals(this.file, other.file)) return false;
 
             return true;
         }

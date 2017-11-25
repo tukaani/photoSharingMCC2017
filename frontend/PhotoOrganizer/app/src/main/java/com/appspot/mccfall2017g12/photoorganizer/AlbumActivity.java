@@ -14,13 +14,10 @@ import android.view.MenuItem;
 import android.view.View;
 
 import java.io.File;
-import java.util.Random;
-import java.util.UUID;
 
 public class AlbumActivity extends AppCompatActivity {
 
     public static final String EXTRA_ALBUM = "com.appspot.mccfall2017g12.photoorganizer.ALBUM";
-    private static final int RESULT_ADD_IMAGE_DEBUG = 1;
 
     private RecyclerView recyclerView;
     private PhotoAdapter adapter;
@@ -41,6 +38,8 @@ public class AlbumActivity extends AppCompatActivity {
         else
             throw new IllegalArgumentException("Album key missing.");
 
+        GalleryDatabase.initialize(this);
+
         this.recyclerView = findViewById(R.id.photos_recycler_view);
         this.recyclerView.setHasFixedSize(true);
 
@@ -50,7 +49,10 @@ public class AlbumActivity extends AppCompatActivity {
                 int position = AlbumActivity.this.recyclerView.getChildAdapterPosition(view);
                 final Photo photo = AlbumActivity.this.adapter.getItem(position).photo;
 
-                File file = new File(photo.path);
+                if (photo.file == null)
+                    return;
+
+                File file = FileTools.get(photo.file);
                 if (file.exists()) {
                     Uri uri = FileProvider.getUriForFile(AlbumActivity.this,
                             BuildConfig.APPLICATION_ID + ".provider", file);
@@ -65,8 +67,7 @@ public class AlbumActivity extends AppCompatActivity {
                     snackbar.setAction(R.string.remove, new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            new GalleryDatabase.DeletePhotoTask(AlbumActivity.this)
-                                    .execute(photo);
+                            new GalleryDatabase.DeletePhotoTask().execute(photo);
                         }
                     });
                     snackbar.show();
@@ -86,21 +87,9 @@ public class AlbumActivity extends AppCompatActivity {
         });
         this.recyclerView.setLayoutManager(layoutManager);
 
-        new GalleryDatabase.LoadPhotosByPeopleTask(this)
+        new GalleryDatabase.LoadPhotosByPeopleTask()
                 .with(this.loadItemsPostExecutor)
                 .execute(this.albumId);
-
-        //TODO Remove
-        {
-            findViewById(R.id.addButton).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                    startActivityForResult(intent, RESULT_ADD_IMAGE_DEBUG);
-
-                }
-            });
-        }
     }
 
     @Override
@@ -113,45 +102,18 @@ public class AlbumActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.sortByAuthorItem:
-                new GalleryDatabase.LoadPhotosByAuthorTask(this)
+                new GalleryDatabase.LoadPhotosByAuthorTask()
                         .with(this.loadItemsPostExecutor)
                         .execute(this.albumId);
                 return true;
             case R.id.sortByPeopleItem:
-                new GalleryDatabase.LoadPhotosByPeopleTask(this)
+                new GalleryDatabase.LoadPhotosByPeopleTask()
                         .with(this.loadItemsPostExecutor)
                         .execute(this.albumId);
                 return true;
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    //TODO Remove
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        switch (requestCode) {
-            case RESULT_ADD_IMAGE_DEBUG:
-                if (resultCode == RESULT_OK && data != null) {
-                    Uri uri = data.getData();
-
-                    Photo photo = new Photo();
-                    photo.photoId = UUID.randomUUID().toString();
-                    photo.path = uri.toString();
-                    photo.albumId = albumId;
-                    Random random = new Random();
-                    photo.author = new String[] {
-                            "Frodo", "Sam", "Merry", "Pippin"
-                    }[random.nextInt(4)];
-                    photo.people = new int[] {
-                            Photo.PEOPLE_NA, Photo.PEOPLE_NO, Photo.PEOPLE_YES
-                    }[random.nextInt(3)];
-
-                    new GalleryDatabase.InsertPhotoTask(this).execute(photo);
-                }
-        }
     }
 
     private class LoadItemsPostExecutor implements PostExecutor<LiveData<Photo.Extended[]>>  {
