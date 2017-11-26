@@ -1,10 +1,10 @@
-#
+""""#
 # Authors: Kalaiarasan Saminathan <kalaiarasan.saminathan@aalto.fi>,
 #          Tuukka Rouhiainen <tuukka.rouhiainen@gmail.com>
 #
 # Copyright (c) 2017 Aalto University, Finland
 #                    All rights reserved
-
+"""
 import logging
 import base64
 import http
@@ -13,7 +13,9 @@ import requests
 from flask import Flask, request, session, redirect, url_for, jsonify
 from flask import render_template
 import detect_image
-import persistence
+import groups
+import users
+from request_validators import is_authorized_user, validate_authorization_header
 
 app = Flask(__name__)
 app.secret_key = 'F12Zr47j3yX R~X@lH!jmM]Lwf/,?KT'
@@ -42,46 +44,55 @@ def status():
 def create_group():
     """Create a photo sharing group"""
     try:
+        validate_authorization_header(request.headers)
+        is_authorized_user(request.headers['Authorization'])
+
         content = request.get_json()
         author = content['author']
         group_name = content['group_name']
         valid_hours = content['validity']
-        group_id, token = persistence.create(
+        group_id, token = groups.create(
             group_name=group_name, validity=valid_hours, author=author)
         return jsonify({'group_id': str(group_id), 'token': token})
     except Exception as ex:
         logging.exception(ex)
-        return jsonify({
-            'status': http.HTTPStatus.BAD_REQUEST,
-            'error': "Bad Request"
-        })
+    return jsonify({
+        'status': http.HTTPStatus.BAD_REQUEST,
+        'error': "Bad Request"
+    })
 
 
 @app.route('/photoorganizer/api/v1.0/group/join', methods=['GET', 'POST'])
 def join_group():
     """ Allow members to join a group """
     try:
+        validate_authorization_header(request.headers)
+        is_authorized_user(request.headers['Authorization'])
+
         content = request.get_json()
         group_id = content['group_id']
         user_id = content['user_id']
-        token = persistence.update(group_id=group_id, user_id=user_id)
+        token = groups.update(group_id=group_id, user_id=user_id)
         return jsonify({'refreshedtoken': token})
     except Exception as ex:
         logging.exception(ex)
-        return jsonify({
-            'status': http.HTTPStatus.BAD_REQUEST,
-            'error': "Bad Request"
-        })
+    return jsonify({
+        'status': http.HTTPStatus.BAD_REQUEST,
+        'error': "Bad Request"
+    })
 
 
 @app.route('/photoorganizer/api/v1.0/group/delete', methods=['GET', 'POST'])
 def delete_group():
     """" Delete the group and images """
     try:
+        validate_authorization_header(request.headers)
+        is_authorized_user(request.headers['Authorization'])
+
         content = request.get_json()
         group_id = content['group_id']
         user_id = content['user_id']
-        persistence.delete(group_id=group_id, user_id=user_id)
+        groups.delete(group_id=group_id, user_id=user_id)
         return jsonify({'status': "success"})
     except Exception as ex:
         logging.exception(ex)
@@ -107,10 +118,10 @@ def process_image_v1():
         return jsonify({'response': response})
     except Exception as ex:
         logging.exception(ex)
-        return jsonify({
-            'status': http.HTTPStatus.BAD_REQUEST,
-            'error': "Bad data"
-        })
+    return jsonify({
+        'status': http.HTTPStatus.BAD_REQUEST,
+        'error': "Bad data"
+    })
 
 
 @app.route('/photoorganizer/api/v2.0/process', methods=['GET', 'POST'])
@@ -126,11 +137,10 @@ def process_image_v2():
         return jsonify({'response': response})
     except Exception as ex:
         logging.exception(ex)
-        response = {
-            'status': http.HTTPStatus.BAD_REQUEST,
-            'error': "invalid JSON"
-        }
-        return jsonify({'response': response})
+    return jsonify({
+        'status': http.HTTPStatus.BAD_REQUEST,
+        'error': "Bad data"
+    })
 
 
 @app.route('/')
@@ -158,6 +168,7 @@ def login():
     try:
         email = request.form['email']
         input_password = request.form['password']
+        users.get_user_by_email(email_id=email)
         session.clear()
         session["user"] = email
         return render_template("filemanager/dashboard.html")
@@ -174,10 +185,20 @@ def logout():
 
 
 @app.errorhandler(500)
-def server_error(error):
+def server_error_500(error):
     """ Handle Internal server error """
     logging.exception('An error occurred during a request..' + str(error))
     return render_template("filemanager/failure.html")
+
+
+@app.errorhandler(403)
+def server_error_403(error):
+    """ Forbidden """
+    logging.exception('An error occurred during a request..' + str(error))
+    return jsonify({
+        'status': http.HTTPStatus.FORBIDDEN,
+        'error': "access forbidden"
+    })
 
 
 if __name__ == '__main__':
