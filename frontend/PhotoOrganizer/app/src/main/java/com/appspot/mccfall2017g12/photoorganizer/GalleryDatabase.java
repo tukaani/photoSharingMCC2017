@@ -46,13 +46,4 @@ public abstract class GalleryDatabase extends RoomDatabase {
             return null;
         }
     }
-
-    public static class DeletePhotoTask extends Task<Photo, Void> {
-
-        @Override
-        protected Void doInBackground(Photo... photos) {
-            GalleryDatabase.getInstance().galleryDao().deletePhotos(photos);
-            return null;
-        }
-    }
 }

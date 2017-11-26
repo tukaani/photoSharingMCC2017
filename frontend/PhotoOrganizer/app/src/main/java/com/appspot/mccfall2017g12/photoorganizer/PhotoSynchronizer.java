@@ -41,7 +41,7 @@ public class PhotoSynchronizer {
 
         this.groupId = groupId;
         this.database = GalleryDatabase.getInstance();
-        this.executor = Executors.newCachedThreadPool();
+        this.executor = ThreadTools.EXECUTOR;
         this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
