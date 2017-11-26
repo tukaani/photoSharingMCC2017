@@ -2,16 +2,24 @@ package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
+import android.util.SparseArray;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
+import com.google.android.gms.vision.Frame;
+import com.google.android.gms.vision.barcode.Barcode;
+import com.google.android.gms.vision.barcode.BarcodeDetector;
+import com.google.android.gms.vision.face.Face;
+import com.google.android.gms.vision.face.FaceDetector;
 
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -100,7 +108,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_PHOTO && resultCode == RESULT_OK) {
 
-            Boolean isBarcode = false;
+            Boolean isBarcode = hasBarcode(this.photoFile);
+
 
             Photo photo = new Photo();
             photo.author = "Me"; //TODO real user
@@ -111,8 +120,22 @@ public class MainActivity extends AppCompatActivity {
                     this.photoFile.getAbsolutePath());
 
             GalleryDatabase.initialize(this);
-            new GalleryDatabase.InsertPhotoTask().execute(photo);
+            if(isBarcode) new GalleryDatabase.InsertPhotoTask().execute(photo);
+
         }
     }
 
+    boolean hasBarcode(File photoFile){
+        Bitmap bitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
+        BarcodeDetector barcodeDetector = new BarcodeDetector.Builder(getApplicationContext()).build();
+        Frame frame = new Frame.Builder().setBitmap(bitmap).build();
+        SparseArray<Barcode> barcodes = barcodeDetector.detect(frame);
+        if(barcodes.size()> 0 ) return true;
+        else return false;
+
+
+    }
+
 }
+
+
