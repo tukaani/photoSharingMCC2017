@@ -19,6 +19,9 @@ public abstract class GalleryDao {
     @Query("SELECT * FROM Photo WHERE photoId = :photoId")
     public abstract Photo loadPhoto(String photoId);
 
+    @Query("SELECT EXISTS(SELECT 1 FROM Photo WHERE photoId = :photoId LIMIT 1)")
+    public abstract boolean photoExists(String photoId);
+
     @Query("UPDATE Photo SET people = :people WHERE photoId = :photoId")
     public abstract void updatePhotoPeople(String photoId, int people);
 
@@ -76,7 +79,7 @@ public abstract class GalleryDao {
         return wasteFile;
     }
 
-    @Query("SELECT EXISTS(SELECT 1 FROM PhotoSyncLock WHERE photoId=:photoId LIMIT 1)")
+    @Query("SELECT EXISTS(SELECT 1 FROM PhotoSyncLock WHERE photoId = :photoId LIMIT 1)")
     protected abstract boolean isPhotoSyncing(String photoId);
 
     @Query("SELECT * FROM PhotoSyncLock WHERE photoId = :photoId")
@@ -101,6 +104,12 @@ public abstract class GalleryDao {
 
     @Delete
     public abstract void deletePhotos(Photo... photos);
+
+    @Transaction
+    @Query("SELECT photoId FROM Photo WHERE albumId = :albumId AND "
+            + "resolution_online > resolution_local AND resolution_local < :maxResolution")
+    public abstract String[] loadPhotosWithHigherOnlineResolution(String albumId,
+                                                                  int maxResolution);
 
     @Transaction
     @Query("SELECT * FROM Album NATURAL LEFT OUTER JOIN "

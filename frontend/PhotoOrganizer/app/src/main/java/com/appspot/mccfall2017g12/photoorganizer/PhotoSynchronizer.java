@@ -50,6 +50,24 @@ public class PhotoSynchronizer {
                 .addChildEventListener(new PhotoEventListener());
     }
 
+    // This should be called when network/settings change.
+    @WorkerThread
+    private void downloadAllImprovablePhotos() {
+        final String[] photoIds = database.galleryDao().loadPhotosWithHigherOnlineResolution(
+                groupId, ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL));
+
+        for (final String photoId : photoIds) {
+            if (shouldDownload(photoId)) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        new PhotoDownload(photoId).start();
+                    }
+                });
+            }
+        }
+    }
+
     @WorkerThread
     private boolean shouldDownload(String photoId) {
         Photo.ResolutionInfo resolution = database.galleryDao().loadPhotoResolution(photoId);
@@ -87,10 +105,8 @@ public class PhotoSynchronizer {
         public void onChildAddedAsync(final DataSnapshot dataSnapshot, String previousChildName) {
             String photoId = dataSnapshot.getKey();
 
-            Photo photo = database.galleryDao().loadPhoto(photoId);
-
-            if (photo == null) {
-                photo = new Photo();
+            if (!database.galleryDao().photoExists(photoId)) {
+                Photo photo = new Photo();
                 photo.photoId = photoId;
                 photo.albumId = groupId;
                 photo.resolution.local = -1;
