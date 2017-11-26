@@ -5,12 +5,14 @@
 # Copyright (c) 2017 Aalto University, Finland
 #                    All rights reserved
 """
+import os
+import constants
 import firebase_admin
 from firebase_admin import auth, credentials
 admin_credentials = credentials.Certificate("./key.json")
 
 firebase_admin.initialize_app(admin_credentials, options={
-    "databaseURL": "https://fir-functions-test-c85f9.firebaseio.com"
+    "databaseURL": os.environ.get('DATABASE_URL', None)
 })
 
 

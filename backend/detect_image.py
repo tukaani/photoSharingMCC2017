@@ -5,18 +5,16 @@
 # Copyright (c) 2017 Aalto University, Finland
 #                    All rights reserved
 """
+import os
+import constants
 from google_service import Service
-
-#ACCESS_TOKEN = os.environ.get('VISION_API')
-
-# TODO: Remove it ..Local Testing
-ACCESS_TOKEN = "AIzaSyAcSZ3-4igzr60jZzSuRa7tUFHr02c9OPQ"
 
 
 def detect_face(image_content):
     """Run a face detection request on a single image"""
 
-    service = Service('vision', 'v1', access_token=ACCESS_TOKEN)
+    service = Service(
+        'vision', 'v1', access_token=os.environ.get('VISION_API_KEY', None))
     body = {
         'requests': [{
             'image': {

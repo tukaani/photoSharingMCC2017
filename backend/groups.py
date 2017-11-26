@@ -8,21 +8,17 @@
 import datetime
 import uuid
 import os
+import constants
 from urllib import parse
 import pyrebase
 
 
-API_KEY = os.environ.get('API_KEY')
-AUTH_DOMAIN = os.environ.get('AUTH_DOMAIN')
-DATABASE_URL = os.environ.get('DATABASE_URL')
-STORAGE_BUCKET = os.environ.get('STORAGE_BUCKET')
-
 firebase_config = {
-    "apiKey": "AIzaSyAGqgZpYbVbn2SwH1T-RjXQ3zJ0rttOY5I",
-    "authDomain": "fir-functions-test-c85f9.firebaseapp.com",
-    "databaseURL": "https://fir-functions-test-c85f9.firebaseio.com",
-    "projectId": "fir-functions-test-c85f9",
-    "storageBucket": "fir-functions-test-c85f9.appspot.com",
+    "apiKey": os.environ.get('FIREBASE_API_KEY', None),
+    "authDomain": os.environ.get('AUTH_DOMAIN', None),
+    "databaseURL": os.environ.get('DATABASE_URL', None),
+    "projectId": os.environ.get('PROJECT_ID', None),
+    "storageBucket": os.environ.get('STORAGE_BUCKET', None),
     "serviceAccount": "./key.json"
 }
 
