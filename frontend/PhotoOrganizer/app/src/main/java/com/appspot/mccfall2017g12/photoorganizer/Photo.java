@@ -1,5 +1,6 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
+import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Embedded;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.Index;
@@ -22,9 +23,14 @@ public class Photo {
     public String file;
     public int people = PEOPLE_NA;
     public String albumId;
-    public int resolution;
-    public int onlineResolution;
-    public boolean isDownloading = false;
+    @Embedded(prefix = "resolution_")
+    @NonNull
+    public ResolutionInfo resolution = new ResolutionInfo();
+
+    public static class ResolutionInfo {
+        public int local;
+        public int online;
+    }
 
     public static class Extended implements Diffable<Extended>, CategoryItem {
 
@@ -49,7 +55,6 @@ public class Photo {
             if (this.itemType != TYPE_ITEM) return true;
 
             if (this.photo.people != other.photo.people) return false;
-            if (this.photo.isDownloading != other.photo.isDownloading) return false;
             if (!TextUtils.equals(this.photo.file, other.photo.file)) return false;
             if (!TextUtils.equals(this.photo.author, other.photo.author)) return false;
 

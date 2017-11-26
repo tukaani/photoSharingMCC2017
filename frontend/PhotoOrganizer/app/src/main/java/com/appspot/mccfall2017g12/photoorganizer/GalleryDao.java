@@ -22,10 +22,14 @@ public abstract class GalleryDao {
     @Query("UPDATE Photo SET people = :people WHERE photoId = :photoId")
     public abstract void updatePhotoPeople(String photoId, int people);
 
-    @Query("UPDATE Photo SET onlineResolution = :onlineResolution WHERE photoId = :photoId")
+    @Query("UPDATE Photo SET resolution_online = :onlineResolution WHERE photoId = :photoId")
     public abstract void updatePhotoOnlineResolution(String photoId, int onlineResolution);
 
-    @Query("UPDATE Photo SET file = :file, resolution = :resolution WHERE photoId = :photoId")
+    @Query("SELECT resolution_local AS local, resolution_online AS online "
+            + "FROM Photo WHERE photoId = :photoId")
+    public abstract Photo.ResolutionInfo loadPhotoResolution(String photoId);
+
+    @Query("UPDATE Photo SET file = :file, resolution_local = :resolution WHERE photoId = :photoId")
     public abstract void updatePhotoFile(String photoId, String file, int resolution);
 
     @Query("UPDATE Photo SET author = :author WHERE photoId = :photoId")
@@ -48,7 +52,7 @@ public abstract class GalleryDao {
         if (photo == null)
             return file; // No file is used because the photo does not exist.
 
-        if (resolution > photo.resolution) {
+        if (resolution > photo.resolution.local) {
             updatePhotoFile(photoId, file, resolution);
             return photo.file; // File changed, the old file is no longer used.
         }
@@ -59,20 +63,23 @@ public abstract class GalleryDao {
         return file; // The new file is not used because it does not improve resolution.
     }
 
-    @Query("SELECT isDownloading FROM Photo WHERE photoId = :photoId")
-    public abstract boolean isDownloading(String photoId);
+    @Query("SELECT EXISTS(SELECT 1 FROM DownloadLock WHERE photoId=:photoId LIMIT 1)")
+    protected abstract boolean isDownloading(String photoId);
 
-    @Query("SELECT isDownloading FROM Photo WHERE photoId = :photoId")
+    @Query("SELECT * FROM DownloadLock WHERE photoId = :photoId")
     public abstract LiveData<DownloadLock> getDownloadLock(String photoId);
 
-    @Query("UPDATE Photo SET isDownloading = :isDownloading WHERE photoId = :photoId")
-    public abstract void setIsDownloading(String photoId, boolean isDownloading);
+    @Insert
+    protected abstract void startDownload(DownloadLock downloadLock);
+
+    @Delete
+    public abstract void releaseDownload(DownloadLock downloadLock);
 
     @Transaction
-    public boolean tryStartDownloading(String photoId) {
+    public boolean tryStartDownload(String photoId) {
         if (isDownloading(photoId))
             return false;
-        setIsDownloading(photoId, true);
+        startDownload(new DownloadLock(photoId));
         return true;
     }
 
@@ -87,20 +94,20 @@ public abstract class GalleryDao {
             + "FROM Photo GROUP BY albumId)")
     public abstract LiveData<Album.Extended[]> loadAllAlbums();
 
-    @Query("SELECT photoId, author, people, file, albumId, resolution, onlineResolution, "
-            + Photo.Extended.TYPE_ITEM + " AS itemType, isDownloading "
+    @Query("SELECT photoId, author, people, file, albumId, resolution_local, resolution_online, "
+            + Photo.Extended.TYPE_ITEM + " AS itemType "
             + "FROM Photo WHERE albumId = :albumId UNION ALL "
             + "SELECT DISTINCT people || '', '', people, '', '', 0, 0, "
-            + Photo.Extended.TYPE_PEOPLE_HEADER + ", 0 "
+            + Photo.Extended.TYPE_PEOPLE_HEADER + " "
             + "FROM Photo WHERE albumId = :albumId "
             + "ORDER BY people, itemType DESC")
     public abstract LiveData<Photo.Extended[]> loadAlbumsPhotosByPeople(String albumId);
 
-    @Query("SELECT photoId, author, people, file, albumId, resolution, onlineResolution, "
-            + Photo.Extended.TYPE_ITEM + " AS itemType, isDownloading "
+    @Query("SELECT photoId, author, people, file, albumId, resolution_local, resolution_online, "
+            + Photo.Extended.TYPE_ITEM + " AS itemType "
             + "FROM Photo WHERE albumId = :albumId UNION ALL "
             + "SELECT DISTINCT author, author, 0, '', '', 0, 0, "
-            + Photo.Extended.TYPE_AUTHOR_HEADER + ", 0 "
+            + Photo.Extended.TYPE_AUTHOR_HEADER + " "
             + "FROM Photo WHERE albumId = :albumId "
             + "ORDER BY author, itemType DESC")
     public abstract LiveData<Photo.Extended[]> loadAlbumsPhotosByAuthor(String albumId);

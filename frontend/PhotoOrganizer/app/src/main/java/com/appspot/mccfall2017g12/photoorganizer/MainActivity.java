@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
             photo.photoId = UUID.randomUUID().toString(); //TODO from firebase (unless private)
             photo.file = this.photoFile.getName();
             photo.albumId = Album.PRIVATE_ALBUM_ID;
-            photo.resolution = ResolutionTools.calculateResolution(
+            photo.resolution.local = ResolutionTools.calculateResolution(
                     this.photoFile.getAbsolutePath());
 
             GalleryDatabase.initialize(this);

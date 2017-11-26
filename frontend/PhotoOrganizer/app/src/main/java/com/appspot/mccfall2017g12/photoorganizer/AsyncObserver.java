@@ -31,7 +31,7 @@ public abstract class AsyncObserver<T> implements Observer<T> {
         });
     }
 
-    protected abstract void onChangedAsync(T t);
+    protected abstract void onChangedAsync(@Nullable T t);
 
     protected void removeFrom(final LiveData<T> observable) {
         if (mainHandler == null)

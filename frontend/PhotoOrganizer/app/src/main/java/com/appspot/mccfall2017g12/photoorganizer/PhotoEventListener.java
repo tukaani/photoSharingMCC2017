@@ -4,7 +4,10 @@ import android.arch.lifecycle.LiveData;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.WorkerThread;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -42,6 +45,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
     }
 
     @Override
+    @WorkerThread
     public void onChildAddedAsync(final DataSnapshot dataSnapshot, String previousChildName) {
         String photoId = dataSnapshot.getKey();
 
@@ -51,7 +55,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
             photo = new Photo();
             photo.photoId = photoId;
             photo.albumId = groupId;
-            photo.resolution = -1;
+            photo.resolution.local = -1;
             database.galleryDao().insertPhotos(photo);
             fetchAndSetAuthorNameForPhotoAsync(dataSnapshot);
         }
@@ -60,6 +64,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
     }
 
     @Override
+    @WorkerThread
     public void onChildChangedAsync(final DataSnapshot dataSnapshot, String previousChildName) {
         updatePhoto(dataSnapshot);
     }
@@ -89,39 +94,56 @@ public class PhotoEventListener extends AsyncChildEventListener {
                 new UserNameEventListener(photoId));
     }
 
-    // Don't call from UI thread
+    @WorkerThread
     private void updatePhoto(final DataSnapshot dataSnapshot) {
-        String photoId = dataSnapshot.getKey();
+        final String photoId = dataSnapshot.getKey();
+
+        if (dataSnapshot.hasChild("resolution")) {
+            int onlineResolution = dataSnapshot.child("resolution").getValue(int.class);
+            database.galleryDao().updatePhotoOnlineResolution(photoId, onlineResolution);
+        }
+        if (dataSnapshot.hasChild("files/" + CURRENT_RESOLUTION_LEVEL)
+                && shouldDownload(photoId)) {
+
+            mainHandler.post(new Runnable() {
+                @Override
+                @MainThread
+                public void run() {
+                    downloadPhotoFileIfNecessary(photoId);
+                }
+            });
+        }
         if (dataSnapshot.hasChild("people")) {
             final int people = dataSnapshot.child("people").getValue(int.class);
             database.galleryDao().updatePhotoPeople(photoId, people);
         }
-        if (dataSnapshot.hasChild("resolution")) {
-            final int onlineResolution = dataSnapshot.child("resolution").getValue(int.class);
-            database.galleryDao().updatePhotoOnlineResolution(photoId, onlineResolution);
-        }
-        if (dataSnapshot.hasChild("files/" + CURRENT_RESOLUTION_LEVEL)) {
-            downloadPhotoFileIfNecessary(photoId);
-        }
+    }
+
+    @WorkerThread
+    private boolean shouldDownload(String photoId) {
+        Photo.ResolutionInfo resolution = database.galleryDao().loadPhotoResolution(photoId);
+
+        if (resolution == null)
+            return false;
+        int targetResolution = ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL,
+                resolution.online);
+        return targetResolution > resolution.local;
     }
 
     // This method will be moved and made public because it should be called for each photo
     // (in the syncing album) whose online resolution is higher than its local resolution
     // whenever settings or network changes.
+    @MainThread
     private void downloadPhotoFileIfNecessary(final String photoId) {
 
         final LiveData<DownloadLock> observable = database.galleryDao().getDownloadLock(photoId);
         observable.observeForever(new AsyncObserver<DownloadLock>(executor, mainHandler) {
             @Override
-            protected void onChangedAsync(DownloadLock downloadLock) {
-                if (downloadLock == null) {
-                    removeFrom(observable);
-                    return;
-                }
+            @WorkerThread
+            protected void onChangedAsync(@Nullable DownloadLock downloadLock) {
+                if (downloadLock != null) return;
 
-                if (downloadLock.isDownloading) return;
-
-                if (database.galleryDao().tryStartDownloading(photoId)) {
+                if (database.galleryDao().tryStartDownload(photoId)) {
                     removeFrom(observable);
                     downloadPhotoFileIfNecessaryInternal(photoId);
                 }
@@ -130,25 +152,15 @@ public class PhotoEventListener extends AsyncChildEventListener {
     }
 
     // The caller must have set isDownloading = true for the photo!
-    // Don't call from UI thread
+    @WorkerThread
     private void releaseDownload(String photoId) {
-        database.galleryDao().setIsDownloading(photoId, false);
+        database.galleryDao().releaseDownload(new DownloadLock(photoId));
     }
 
     // The caller must have set isDownloading = true for the photo!
-    // Don't call from UI thread
+    @WorkerThread
     private void downloadPhotoFileIfNecessaryInternal(String photoId) {
-        Photo photo = database.galleryDao().loadPhoto(photoId);
-
-        if (photo == null) {
-            releaseDownload(photoId);
-            return;
-        }
-
-        int targetResolution = ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL,
-                photo.onlineResolution);
-
-        if (targetResolution <= photo.resolution) {
+        if (!shouldDownload(photoId)) {
             releaseDownload(photoId);
             return;
         }
@@ -169,6 +181,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
         }
 
         @Override
+        @WorkerThread
         public void onDataChangeAsync(final DataSnapshot dataSnapshot) {
             String userName = dataSnapshot.getValue(String.class);
             database.galleryDao().updatePhotoAuthor(photoId, userName);
@@ -192,6 +205,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
         }
 
         @Override
+        @WorkerThread
         public void onDataChangeAsync(final DataSnapshot dataSnapshot) {
             String filename = dataSnapshot.getValue(String.class);
 
@@ -211,11 +225,13 @@ public class PhotoEventListener extends AsyncChildEventListener {
         }
 
         @Override
+        @WorkerThread
         public void onCancelledAsync(DatabaseError databaseError) {
             releaseDownload(photoId);
         }
 
         @Override
+        @WorkerThread
         public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
             String filename = volatileFilename;
 
@@ -233,6 +249,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
         }
 
         @Override
+        @WorkerThread
         public void onFailure(@NonNull Exception e) {
             releaseDownload(photoId);
         }

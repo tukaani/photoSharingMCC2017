@@ -6,7 +6,8 @@ import android.arch.persistence.room.Room;
 import android.arch.persistence.room.RoomDatabase;
 import android.content.Context;
 
-@Database(entities = {Album.class, Photo.class}, version = 1, exportSchema = false)
+@Database(entities = {Album.class, Photo.class, DownloadLock.class},
+        version = 1, exportSchema = false)
 public abstract class GalleryDatabase extends RoomDatabase {
 
     private static GalleryDatabase instance;
