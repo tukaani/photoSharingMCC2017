@@ -5,12 +5,12 @@ import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.NonNull;
 
 @Entity
-public class DownloadLock {
+public class PhotoSyncLock {
     @PrimaryKey
     @NonNull
     public String photoId;
 
-    public DownloadLock(String photoId) {
+    public PhotoSyncLock(String photoId) {
         this.photoId = photoId;
     }
 }

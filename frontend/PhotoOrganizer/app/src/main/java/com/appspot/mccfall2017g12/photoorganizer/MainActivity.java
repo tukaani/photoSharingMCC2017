@@ -76,10 +76,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if (!PhotoEventListener.isListening) {
-            FirebaseDatabase.getInstance().getReference("photos").child("a1").addChildEventListener(
-                    new PhotoEventListener("a1", this));
-            PhotoEventListener.isListening = true;
+        if (!PhotoSynchronizer.isListening) {
+            new PhotoSynchronizer("a1", this).listen();
+            PhotoSynchronizer.isListening = true;
         }
     }
 

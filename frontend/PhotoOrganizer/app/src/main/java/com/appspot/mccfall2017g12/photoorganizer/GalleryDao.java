@@ -23,7 +23,15 @@ public abstract class GalleryDao {
     public abstract void updatePhotoPeople(String photoId, int people);
 
     @Query("UPDATE Photo SET resolution_online = :onlineResolution WHERE photoId = :photoId")
-    public abstract void updatePhotoOnlineResolution(String photoId, int onlineResolution);
+    protected abstract void updatePhotoOnlineResolution(String photoId, int onlineResolution);
+
+    @Transaction
+    public void improvePhotoOnlineResolution(String photoId, int onlineResolution) {
+        Photo.ResolutionInfo resolution = loadPhotoResolution(photoId);
+
+        if (onlineResolution > resolution.online)
+            updatePhotoOnlineResolution(photoId, onlineResolution);
+    }
 
     @Query("SELECT resolution_local AS local, resolution_online AS online "
             + "FROM Photo WHERE photoId = :photoId")
@@ -63,23 +71,23 @@ public abstract class GalleryDao {
         return file; // The new file is not used because it does not improve resolution.
     }
 
-    @Query("SELECT EXISTS(SELECT 1 FROM DownloadLock WHERE photoId=:photoId LIMIT 1)")
-    protected abstract boolean isDownloading(String photoId);
+    @Query("SELECT EXISTS(SELECT 1 FROM PhotoSyncLock WHERE photoId=:photoId LIMIT 1)")
+    protected abstract boolean isPhotoSyncing(String photoId);
 
-    @Query("SELECT * FROM DownloadLock WHERE photoId = :photoId")
-    public abstract LiveData<DownloadLock> getDownloadLock(String photoId);
+    @Query("SELECT * FROM PhotoSyncLock WHERE photoId = :photoId")
+    public abstract LiveData<PhotoSyncLock> getPhotoSyncLock(String photoId);
 
     @Insert
-    protected abstract void startDownload(DownloadLock downloadLock);
+    protected abstract void startPhotoSync(PhotoSyncLock photoSyncLock);
 
     @Delete
-    public abstract void releaseDownload(DownloadLock downloadLock);
+    public abstract void releasePhotoSync(PhotoSyncLock photoSyncLock);
 
     @Transaction
-    public boolean tryStartDownload(String photoId) {
-        if (isDownloading(photoId))
+    public boolean tryStartPhotoSync(String photoId) {
+        if (isPhotoSyncing(photoId))
             return false;
-        startDownload(new DownloadLock(photoId));
+        startPhotoSync(new PhotoSyncLock(photoId));
         return true;
     }
 
