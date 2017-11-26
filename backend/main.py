@@ -15,7 +15,7 @@ from flask import render_template
 import detect_image
 import groups
 import users
-from request_validators import is_authorized_user,validate_authorization_header
+from request_validators import is_authorized_user, validate_authorization_header
 
 app = Flask(__name__)
 app.secret_key = 'F12Zr47j3yX R~X@lH!jmM]Lwf/,?KT'
@@ -45,7 +45,7 @@ def create_group():
     """Create a photo sharing group"""
     try:
         validate_authorization_header(request.headers)
-        is_authorized_user( request.headers['Authorization'])
+        is_authorized_user(request.headers['Authorization'])
 
         content = request.get_json()
         author = content['author']
@@ -189,6 +189,7 @@ def server_error_500(error):
     """ Handle Internal server error """
     logging.exception('An error occurred during a request..' + str(error))
     return render_template("filemanager/failure.html")
+
 
 @app.errorhandler(403)
 def server_error_403(error):
