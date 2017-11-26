@@ -1,13 +1,19 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.support.annotation.NonNull;
+import android.util.Log;
 
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -19,6 +25,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
 
     private final String groupId;
     private final GalleryDatabase database;
+    private final Handler mainHandler;
 
     //TODO hack, must be changed!
     public volatile static boolean isListening = false;
@@ -32,6 +39,8 @@ public class PhotoEventListener extends AsyncChildEventListener {
 
         GalleryDatabase.initialize(context);
         this.database = GalleryDatabase.getInstance();
+
+        this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
     @Override
@@ -44,6 +53,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
             photo = new Photo();
             photo.photoId = photoId;
             photo.albumId = groupId;
+            photo.resolution = -1;
             database.galleryDao().insertPhotos(photo);
             fetchAndSetAuthorNameForPhotoAsync(dataSnapshot);
         }
@@ -67,7 +77,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
     }
 
     @Override
-    public void onCancelled(DatabaseError databaseError) {
+    public void onCancelledAsync(DatabaseError databaseError) {
 
     }
 
@@ -97,16 +107,45 @@ public class PhotoEventListener extends AsyncChildEventListener {
         }
     }
 
-    // Don't call from UI thread
-    //
     // This method will be moved and made public because it should be called for each photo
     // (in the syncing album) whose online resolution is higher than its local resolution
     // whenever settings or network changes.
-    private void updatePhotoFileIfNecessary(String photoId) {
+    private void updatePhotoFileIfNecessary(final String photoId) {
+
+        final LiveData<DownloadLock> observable = database.galleryDao().getDownloadLock(photoId);
+        observable.observeForever(new AsyncObserver<DownloadLock>(executor, mainHandler) {
+            @Override
+            protected void onChangedAsync(DownloadLock downloadLock) {
+                if (downloadLock == null) {
+                    removeFrom(observable);
+                    return;
+                }
+
+                if (downloadLock.isDownloading) return;
+
+                if (database.galleryDao().tryStartDownloading(photoId)) {
+                    removeFrom(observable);
+                    updatePhotoFileIfNecessaryInternal(photoId);
+                }
+            }
+        });
+    }
+
+    // The caller must have set isDownloading = true for the photo!
+    // Don't call from UI thread
+    private void releaseDownload(String photoId) {
+        database.galleryDao().setIsDownloading(photoId, false);
+    }
+
+    // The caller must have set isDownloading = true for the photo!
+    // Don't call from UI thread
+    private void updatePhotoFileIfNecessaryInternal(String photoId) {
         Photo photo = database.galleryDao().loadPhoto(photoId);
 
-        if (photo == null)
+        if (photo == null) {
+            releaseDownload(photoId);
             return;
+        }
 
         int targetResolution = ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL,
                 photo.onlineResolution);
@@ -135,62 +174,66 @@ public class PhotoEventListener extends AsyncChildEventListener {
         }
 
         @Override
-        public void onCancelled(DatabaseError databaseError) {
+        public void onCancelledAsync(DatabaseError databaseError) {
 
         }
     }
 
-    private class PhotoFileListener implements ValueEventListener,
-            OnSuccessListener<FileDownloadTask.TaskSnapshot> {
+    private class PhotoFileListener extends AsyncValueEventListener
+            implements OnSuccessListener<FileDownloadTask.TaskSnapshot>, OnFailureListener {
 
         private final String photoId;
-        private String filename;
+        private volatile String volatileFilename;
 
         public PhotoFileListener(String photoId) {
+            super(executor);
             this.photoId = photoId;
         }
 
         @Override
-        public void onDataChange(final DataSnapshot dataSnapshot) {
-            if (filename != null)
-                throw new IllegalStateException("PhotoFileListener can be used as a listener "
-                        + "only for a single event and it cannot be reused.");
+        public void onDataChangeAsync(final DataSnapshot dataSnapshot) {
+            String filename = dataSnapshot.getValue(String.class);
 
-            if (!dataSnapshot.exists())
+            if (filename == null) {
+                releaseDownload(photoId);
                 return;
+            }
 
-            filename = dataSnapshot.getValue(String.class);
+            volatileFilename = filename;
 
             StorageReference imagesRef = FirebaseStorage.getInstance().getReference("images");
             StorageReference fileRef = imagesRef.child(groupId).child(filename);
 
             File localFile = FileTools.get(filename);
-            fileRef.getFile(localFile).addOnSuccessListener(this);
+            fileRef.getFile(localFile).addOnSuccessListener(executor, this)
+                    .addOnFailureListener(executor, this);
         }
 
         @Override
-        public void onCancelled(DatabaseError databaseError) {
-
+        public void onCancelledAsync(DatabaseError databaseError) {
+            releaseDownload(photoId);
         }
 
         @Override
         public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-            final String filename = this.filename;
+            String filename = volatileFilename;
 
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    File localFile = FileTools.get(filename);
-                    int resolution = ResolutionTools.calculateResolution(
-                            localFile.getAbsolutePath());
+            File localFile = FileTools.get(filename);
+            int resolution = ResolutionTools.calculateResolution(
+                    localFile.getAbsolutePath());
 
-                    String fileToBeRemoved = database.galleryDao()
-                            .tryUpdatePhotoFile(photoId, filename, resolution);
+            String fileToBeRemoved = database.galleryDao()
+                    .tryUpdatePhotoFile(photoId, filename, resolution);
 
-                    if (fileToBeRemoved != null)
-                        FileTools.get(fileToBeRemoved).delete();
-                }
-            });
+            if (fileToBeRemoved != null)
+                FileTools.get(fileToBeRemoved).delete();
+
+            releaseDownload(photoId);
+        }
+
+        @Override
+        public void onFailure(@NonNull Exception e) {
+            releaseDownload(photoId);
         }
     }
 }

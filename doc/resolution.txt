@@ -1,0 +1,98 @@
+Resolution
+
+  Olli
+  2017-11-26
+
+To make the program work correctly, it is important that frontend and backend
+understand the concept of resolution in the same way.  (Otherwise, the clients
+may download the same image files again and again thinking that there is a
+better resolution available than what they already have.)
+
+In the frontend code, resolution is currently defined as follows:
+
+  Let W and H > 0 be the dimensions (width and height, integers) of an image.
+  The resolution (integer R) of the image is
+
+  R = ceil(max(W,H) * 3 / 4)   , if max(W,H) / min(W,H) > 4 / 3
+      min(W,H)                 , otherwise
+
+  (Note:  "ceil" is the ceiling function.  ceil(x) refers to the next integer
+  greater than or equal to x.)
+
+  (Note:  '/' here does NOT denote integer division!  To implement division and
+  ceiling correctly using integer division, see a Python implementation below.)
+
+The idea of the definition is that it corresponds to the shorter dimension of
+a rectangle whose aspect ratio is 4:3 and which totally covers the image.
+
+Examples of resolutions:
+
+  resolution(W,H) = R
+
+  resolution(4,3) = 3
+  resolution(16,9) = 12
+  resolution(640,480) = 480
+  resolution(480,640) = 480
+  resolution(1280,960) = 960
+  resolution(1281,960) = 961
+  resolution(1920,1080) = 1440
+
+The backend should make sure that the following holds for the different versions
+of any photo stored in the Firebase:
+
+  version     resolution(W,H)
+  ----------- ---------------------
+  "low"       min(480, $resolution)
+  "high"      min(960, $resolution)
+  "full"      $resolution
+
+where $resolution refers to the value of the resolution stored in the Firebase
+Realtime Database (that is, the full resolution of the photo).
+
+Why this is important?
+
+The frontend code works so, that when a client downloads an image file, it
+measures its resolution and store the value locally.  Let's say a client
+downloads an image with dimensions of 1278x959 and calculates its resolution
+using the definition shown above resulting with 959.  The backend, however, has
+considered this image file to have the resolution of 960 using some other
+definition for the resolution.  Soon, the same client notices that in the
+Firebase, there is a better resolution (R=960) available and downloads the same
+image file again. The cycle can go on and on.
+
+Could we solve this otherwise?
+
+It could be possible that the resolution is only calculated in the backend, and
+instead of measuring it, the frontend just trust the values it gets from the
+Firebase Realtime Database.  In that case, the definition of the resolution
+would not be that important issue.  However, considering how the software is
+designed this far, it would be easier if resolution is measured separately both
+in frontend and backend (low coupling).
+
+Perhaps the most easiest solution would be that the client only downloads a
+better version of a photo if its reported resolution is significantly (e.g.
+20 pixels) higher than the one it already has.  In that case, it wouldn't matter
+a lot how the resolution exactly is calculated.  However, the elegance of that
+solution would be questionable.
+
+How otherwise resolution could be defined?
+
+Some simple ideas:
+
+  R_multiply = W * H
+  R_height = H
+  R_max = max(W,H)
+
+Implementation of "resolution" in Python 2.7 (possibly also below) and
+Python 3.x:
+
+  def resolution(w,h):
+    a = max(w,h)
+    b = min(w,h)
+    if (3 * a > 4 * b):
+      return ceildiv(3 * a, 4)
+    else:
+      return b
+
+  def ceildiv(p,q):
+    return (p + q - 1) // q

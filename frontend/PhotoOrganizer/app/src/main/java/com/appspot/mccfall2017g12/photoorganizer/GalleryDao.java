@@ -1,15 +1,14 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
+import android.arch.lifecycle.LiveData;
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
 import android.arch.persistence.room.Transaction;
-import android.arch.lifecycle.LiveData;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
-import android.util.Log;
 
 @Dao
 public abstract class GalleryDao {
@@ -58,6 +57,23 @@ public abstract class GalleryDao {
             return null; // The file is the same as the old one. No file should be deleted.
 
         return file; // The new file is not used because it does not improve resolution.
+    }
+
+    @Query("SELECT isDownloading FROM Photo WHERE photoId = :photoId")
+    public abstract boolean isDownloading(String photoId);
+
+    @Query("SELECT isDownloading FROM Photo WHERE photoId = :photoId")
+    public abstract LiveData<DownloadLock> getDownloadLock(String photoId);
+
+    @Query("UPDATE Photo SET isDownloading = :isDownloading WHERE photoId = :photoId")
+    public abstract void setIsDownloading(String photoId, boolean isDownloading);
+
+    @Transaction
+    public boolean tryStartDownloading(String photoId) {
+        if (isDownloading(photoId))
+            return false;
+        setIsDownloading(photoId, true);
+        return true;
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

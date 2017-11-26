@@ -24,6 +24,7 @@ public class Photo {
     public String albumId;
     public int resolution;
     public int onlineResolution;
+    public boolean isDownloading = false;
 
     public static class Extended implements Diffable<Extended>, CategoryItem {
 
