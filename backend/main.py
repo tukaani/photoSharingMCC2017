@@ -45,8 +45,7 @@ def create_group():
     """Create a photo sharing group"""
     try:
         validate_authorization_header(request.headers)
-        authorization = request.headers['Authorization']
-        is_authorized_user(authorization)
+        is_authorized_user( request.headers['Authorization'])
 
         content = request.get_json()
         author = content['author']
