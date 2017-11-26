@@ -57,7 +57,7 @@ def update(group_id, user_id):
         group_id).child("members").get().val()
 
     if user_id in members:
-        raise ValueError("user has already joined the group")
+        raise Exception("user has already joined the group")
 
     members.append(user_id)
     database.child("group").child(

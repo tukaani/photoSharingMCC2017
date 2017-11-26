@@ -15,6 +15,7 @@ from flask import render_template
 import detect_image
 import groups
 import users
+from request_validators import is_authorized_user,validate_authorization_header
 
 app = Flask(__name__)
 app.secret_key = 'F12Zr47j3yX R~X@lH!jmM]Lwf/,?KT'
@@ -43,6 +44,10 @@ def status():
 def create_group():
     """Create a photo sharing group"""
     try:
+        validate_authorization_header(request.headers)
+        authorization = request.headers['Authorization']
+        is_authorized_user(authorization)
+
         content = request.get_json()
         author = content['author']
         group_name = content['group_name']
@@ -62,6 +67,9 @@ def create_group():
 def join_group():
     """ Allow members to join a group """
     try:
+        validate_authorization_header(request.headers)
+        is_authorized_user(request.headers['Authorization'])
+
         content = request.get_json()
         group_id = content['group_id']
         user_id = content['user_id']
@@ -79,6 +87,9 @@ def join_group():
 def delete_group():
     """" Delete the group and images """
     try:
+        validate_authorization_header(request.headers)
+        is_authorized_user(request.headers['Authorization'])
+
         content = request.get_json()
         group_id = content['group_id']
         user_id = content['user_id']
@@ -175,10 +186,19 @@ def logout():
 
 
 @app.errorhandler(500)
-def server_error(error):
+def server_error_500(error):
     """ Handle Internal server error """
     logging.exception('An error occurred during a request..' + str(error))
     return render_template("filemanager/failure.html")
+
+@app.errorhandler(403)
+def server_error_403(error):
+    """ Forbidden """
+    logging.exception('An error occurred during a request..' + str(error))
+    return jsonify({
+        'status': http.HTTPStatus.FORBIDDEN,
+        'error': "access forbidden"
+    })
 
 
 if __name__ == '__main__':
