@@ -76,10 +76,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if (!PhotoEventListener.isListening) {
-            FirebaseDatabase.getInstance().getReference("photos").child("a1").addChildEventListener(
-                    new PhotoEventListener("a1", this));
-            PhotoEventListener.isListening = true;
+        if (!PhotoSynchronizer.isListening) {
+            new PhotoSynchronizer("a1", this).listen();
+            PhotoSynchronizer.isListening = true;
         }
     }
 
@@ -108,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
             photo.photoId = UUID.randomUUID().toString(); //TODO from firebase (unless private)
             photo.file = this.photoFile.getName();
             photo.albumId = Album.PRIVATE_ALBUM_ID;
-            photo.resolution = ResolutionTools.calculateResolution(
+            photo.resolution.local = ResolutionTools.calculateResolution(
                     this.photoFile.getAbsolutePath());
 
             GalleryDatabase.initialize(this);

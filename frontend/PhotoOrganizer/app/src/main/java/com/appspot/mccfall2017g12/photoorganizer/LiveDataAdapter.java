@@ -4,6 +4,7 @@ import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.support.annotation.LayoutRes;
+import android.support.annotation.MainThread;
 import android.support.annotation.Nullable;
 import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
@@ -23,6 +24,7 @@ public abstract class LiveDataAdapter<T extends Diffable<T>, VH extends Recycler
         this.itemsObserver = new ItemsObserver();
     }
 
+    @MainThread
     public void setLiveData(LiveData<T[]> liveData) {
         if (this.liveData != null) {
             this.liveData.removeObserver(this.itemsObserver);

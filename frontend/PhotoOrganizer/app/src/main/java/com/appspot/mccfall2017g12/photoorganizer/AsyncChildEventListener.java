@@ -63,6 +63,16 @@ public abstract class AsyncChildEventListener implements ChildEventListener {
         });
     }
 
+    @Override
+    public void onCancelled(final DatabaseError databaseError) {
+        this.executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                onCancelledAsync(databaseError);
+            }
+        });
+    }
+
     public abstract void onChildAddedAsync(DataSnapshot dataSnapshot, String previousChildName);
 
     public abstract void onChildChangedAsync(DataSnapshot dataSnapshot, String previousChildName);
@@ -70,4 +80,6 @@ public abstract class AsyncChildEventListener implements ChildEventListener {
     public abstract void onChildRemovedAsync(DataSnapshot dataSnapshot);
 
     public abstract void onChildMovedAsync(DataSnapshot dataSnapshot, String previousChildName);
+
+    public abstract void onCancelledAsync(DatabaseError databaseError);
 }

@@ -1,15 +1,14 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
+import android.arch.lifecycle.LiveData;
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
 import android.arch.persistence.room.Transaction;
-import android.arch.lifecycle.LiveData;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
-import android.util.Log;
 
 @Dao
 public abstract class GalleryDao {
@@ -23,10 +22,22 @@ public abstract class GalleryDao {
     @Query("UPDATE Photo SET people = :people WHERE photoId = :photoId")
     public abstract void updatePhotoPeople(String photoId, int people);
 
-    @Query("UPDATE Photo SET onlineResolution = :onlineResolution WHERE photoId = :photoId")
-    public abstract void updatePhotoOnlineResolution(String photoId, int onlineResolution);
+    @Query("UPDATE Photo SET resolution_online = :onlineResolution WHERE photoId = :photoId")
+    protected abstract void updatePhotoOnlineResolution(String photoId, int onlineResolution);
 
-    @Query("UPDATE Photo SET file = :file, resolution = :resolution WHERE photoId = :photoId")
+    @Transaction
+    public void improvePhotoOnlineResolution(String photoId, int onlineResolution) {
+        Photo.ResolutionInfo resolution = loadPhotoResolution(photoId);
+
+        if (onlineResolution > resolution.online)
+            updatePhotoOnlineResolution(photoId, onlineResolution);
+    }
+
+    @Query("SELECT resolution_local AS local, resolution_online AS online "
+            + "FROM Photo WHERE photoId = :photoId")
+    public abstract Photo.ResolutionInfo loadPhotoResolution(String photoId);
+
+    @Query("UPDATE Photo SET file = :file, resolution_local = :resolution WHERE photoId = :photoId")
     public abstract void updatePhotoFile(String photoId, String file, int resolution);
 
     @Query("UPDATE Photo SET author = :author WHERE photoId = :photoId")
@@ -49,7 +60,7 @@ public abstract class GalleryDao {
         if (photo == null)
             return file; // No file is used because the photo does not exist.
 
-        if (resolution > photo.resolution) {
+        if (resolution > photo.resolution.local) {
             updatePhotoFile(photoId, file, resolution);
             return photo.file; // File changed, the old file is no longer used.
         }
@@ -58,6 +69,26 @@ public abstract class GalleryDao {
             return null; // The file is the same as the old one. No file should be deleted.
 
         return file; // The new file is not used because it does not improve resolution.
+    }
+
+    @Query("SELECT EXISTS(SELECT 1 FROM PhotoSyncLock WHERE photoId=:photoId LIMIT 1)")
+    protected abstract boolean isPhotoSyncing(String photoId);
+
+    @Query("SELECT * FROM PhotoSyncLock WHERE photoId = :photoId")
+    public abstract LiveData<PhotoSyncLock> getPhotoSyncLock(String photoId);
+
+    @Insert
+    protected abstract void startPhotoSync(PhotoSyncLock photoSyncLock);
+
+    @Delete
+    public abstract void releasePhotoSync(PhotoSyncLock photoSyncLock);
+
+    @Transaction
+    public boolean tryStartPhotoSync(String photoId) {
+        if (isPhotoSyncing(photoId))
+            return false;
+        startPhotoSync(new PhotoSyncLock(photoId));
+        return true;
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -71,7 +102,7 @@ public abstract class GalleryDao {
             + "FROM Photo GROUP BY albumId)")
     public abstract LiveData<Album.Extended[]> loadAllAlbums();
 
-    @Query("SELECT photoId, author, people, file, albumId, resolution, onlineResolution, "
+    @Query("SELECT photoId, author, people, file, albumId, resolution_local, resolution_online, "
             + Photo.Extended.TYPE_ITEM + " AS itemType "
             + "FROM Photo WHERE albumId = :albumId UNION ALL "
             + "SELECT DISTINCT people || '', '', people, '', '', 0, 0, "
@@ -80,7 +111,7 @@ public abstract class GalleryDao {
             + "ORDER BY people, itemType DESC")
     public abstract LiveData<Photo.Extended[]> loadAlbumsPhotosByPeople(String albumId);
 
-    @Query("SELECT photoId, author, people, file, albumId, resolution, onlineResolution, "
+    @Query("SELECT photoId, author, people, file, albumId, resolution_local, resolution_online, "
             + Photo.Extended.TYPE_ITEM + " AS itemType "
             + "FROM Photo WHERE albumId = :albumId UNION ALL "
             + "SELECT DISTINCT author, author, 0, '', '', 0, 0, "

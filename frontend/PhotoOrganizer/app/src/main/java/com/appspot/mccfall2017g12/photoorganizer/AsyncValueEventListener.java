@@ -28,5 +28,17 @@ public abstract class AsyncValueEventListener implements ValueEventListener {
         });
     }
 
+    @Override
+    public void onCancelled(final DatabaseError databaseError) {
+        this.executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                onCancelledAsync(databaseError);
+            }
+        });
+    }
+
     public abstract void onDataChangeAsync(DataSnapshot dataSnapshot);
+
+    public abstract void onCancelledAsync(DatabaseError databaseError);
 }

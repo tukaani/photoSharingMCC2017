@@ -4,9 +4,6 @@ import android.graphics.BitmapFactory;
 
 public class ResolutionTools {
 
-    public final static int REFERENCE_HEIGHT = 3;
-    public final static int REFERENCE_WIDTH = 4;
-
     public final static int RESOLUTION_LOW = 480;
     public final static int RESOLUTION_HIGH = 960;
 
@@ -16,10 +13,7 @@ public class ResolutionTools {
 
     /**
      * Calculates the resolution of an image file stored locally.
-     * Resolution here is defined as follows:
-     * Resolution is the height of a rectangle whose aspect ratio is
-     * {@literal REFERENCE_WIDTH} / {@literal REFERENCE_HEIGHT} and
-     * which totally covers the image.
+     * See doc/resolution.txt for further information.
      *
      * @param filePath the image file full path
      * @return Resolution
@@ -28,21 +22,23 @@ public class ResolutionTools {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(filePath, options);
-        if (REFERENCE_HEIGHT * options.outWidth > REFERENCE_WIDTH * options.outHeight)
-            return ceiledDivision(REFERENCE_HEIGHT * options.outWidth, REFERENCE_WIDTH);
+        int a = Math.max(options.outWidth, options.outHeight);
+        int b = Math.min(options.outWidth, options.outHeight);
+        if (3 * a > 4 * b)
+            return ceiledDivision(3 * a, 4);
         else
-            return options.outHeight;
+            return b;
     }
 
     /**
      * Returns correctly ceiled division of two integers
      *
-     * @param a Dividend
-     * @param b Divisor
-     * @return ceil(a divided by b)
+     * @param p Dividend
+     * @param q Divisor
+     * @return ceil(p divided by q)
      */
-    private static int ceiledDivision(int a, int b) {
-        return (a + b - 1) / b;
+    private static int ceiledDivision(int p, int q) {
+        return (p + q - 1) / q;
     }
 
     public static int getResolution(String resolutionLevel, int fullResolution) {
