@@ -1,6 +1,5 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
-import android.arch.lifecycle.LiveData;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,7 +21,7 @@ public class AlbumActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private PhotoAdapter adapter;
     private String albumId;
-    private final LoadItemsPostExecutor loadItemsPostExecutor = new LoadItemsPostExecutor();
+    private GalleryDatabase database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +38,7 @@ public class AlbumActivity extends AppCompatActivity {
             throw new IllegalArgumentException("Album key missing.");
 
         GalleryDatabase.initialize(this);
+        database = GalleryDatabase.getInstance();
 
         this.recyclerView = findViewById(R.id.photos_recycler_view);
         this.recyclerView.setHasFixedSize(true);
@@ -87,9 +87,7 @@ public class AlbumActivity extends AppCompatActivity {
         });
         this.recyclerView.setLayoutManager(layoutManager);
 
-        new GalleryDatabase.LoadPhotosByPeopleTask()
-                .with(this.loadItemsPostExecutor)
-                .execute(this.albumId);
+        this.adapter.setLiveData(database.galleryDao().loadAlbumsPhotosByPeople(this.albumId));
     }
 
     @Override
@@ -102,24 +100,15 @@ public class AlbumActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.sortByAuthorItem:
-                new GalleryDatabase.LoadPhotosByAuthorTask()
-                        .with(this.loadItemsPostExecutor)
-                        .execute(this.albumId);
+                this.adapter.setLiveData(database.galleryDao()
+                        .loadAlbumsPhotosByAuthor(this.albumId));
                 return true;
             case R.id.sortByPeopleItem:
-                new GalleryDatabase.LoadPhotosByPeopleTask()
-                        .with(this.loadItemsPostExecutor)
-                        .execute(this.albumId);
+                this.adapter.setLiveData(database.galleryDao()
+                        .loadAlbumsPhotosByPeople(this.albumId));
                 return true;
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    private class LoadItemsPostExecutor implements PostExecutor<LiveData<Photo.Extended[]>>  {
-        @Override
-        public void onPostExecute(LiveData<Photo.Extended[]> liveData) {
-            AlbumActivity.this.adapter.setLiveData(liveData);
-        }
     }
 }

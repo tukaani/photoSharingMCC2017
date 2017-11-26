@@ -29,35 +29,6 @@ public abstract class GalleryDatabase extends RoomDatabase {
 
     }
 
-    public static class LoadPhotosByAuthorTask extends Task<String, LiveData<Photo.Extended[]>> {
-
-        @Override
-        protected LiveData<Photo.Extended[]> doInBackground(String... params) {
-            String albumKey = params[0];
-            return GalleryDatabase.getInstance().galleryDao()
-                    .loadAlbumsPhotosByAuthor(albumKey);
-        }
-
-    }
-
-    public static class LoadPhotosByPeopleTask extends Task<String, LiveData<Photo.Extended[]>> {
-
-        @Override
-        protected LiveData<Photo.Extended[]> doInBackground(String... params) {
-            String albumKey = params[0];
-            return GalleryDatabase.getInstance().galleryDao()
-                    .loadAlbumsPhotosByPeople(albumKey);
-        }
-    }
-
-    public static class LoadAlbumsTask extends Task<Void, LiveData<Album.Extended[]>> {
-
-        @Override
-        protected LiveData<Album.Extended[]> doInBackground(Void... voids) {
-            return GalleryDatabase.getInstance().galleryDao().loadAllAlbums();
-        }
-    }
-
     public static class InsertPhotoTask extends Task<Photo, Void> {
 
         @Override
@@ -82,15 +53,6 @@ public abstract class GalleryDatabase extends RoomDatabase {
         protected Void doInBackground(Photo... photos) {
             GalleryDatabase.getInstance().galleryDao().deletePhotos(photos);
             return null;
-        }
-    }
-
-    public static class LoadPhotoTask extends Task<String, Photo> {
-
-        @Override
-        protected Photo doInBackground(String... photoIds) {
-            String photoId = photoIds[0];
-            return GalleryDatabase.getInstance().galleryDao().loadPhoto(photoId);
         }
     }
 }

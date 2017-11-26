@@ -1,6 +1,5 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
-import android.arch.lifecycle.LiveData;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -41,12 +40,7 @@ public class GalleryActivity extends AppCompatActivity {
         GridLayoutManager layoutManager = new GridLayoutManager(this, COLUMN_COUNT);
         this.recyclerView.setLayoutManager(layoutManager);
 
-        new GalleryDatabase.LoadAlbumsTask().with(new PostExecutor<LiveData<Album.Extended[]>>() {
-            @Override
-            public void onPostExecute(LiveData<Album.Extended[]> liveData) {
-                GalleryActivity.this.adapter.setLiveData(liveData);
-            }
-        }).execute();
+        this.adapter.setLiveData(GalleryDatabase.getInstance().galleryDao().loadAllAlbums());
 
         //TODO Remove
         {

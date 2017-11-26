@@ -1,12 +1,10 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.arch.lifecycle.LiveData;
-import android.arch.lifecycle.Observer;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -103,14 +101,14 @@ public class PhotoEventListener extends AsyncChildEventListener {
             database.galleryDao().updatePhotoOnlineResolution(photoId, onlineResolution);
         }
         if (dataSnapshot.hasChild("files/" + CURRENT_RESOLUTION_LEVEL)) {
-            updatePhotoFileIfNecessary(photoId);
+            downloadPhotoFileIfNecessary(photoId);
         }
     }
 
     // This method will be moved and made public because it should be called for each photo
     // (in the syncing album) whose online resolution is higher than its local resolution
     // whenever settings or network changes.
-    private void updatePhotoFileIfNecessary(final String photoId) {
+    private void downloadPhotoFileIfNecessary(final String photoId) {
 
         final LiveData<DownloadLock> observable = database.galleryDao().getDownloadLock(photoId);
         observable.observeForever(new AsyncObserver<DownloadLock>(executor, mainHandler) {
@@ -125,7 +123,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
 
                 if (database.galleryDao().tryStartDownloading(photoId)) {
                     removeFrom(observable);
-                    updatePhotoFileIfNecessaryInternal(photoId);
+                    downloadPhotoFileIfNecessaryInternal(photoId);
                 }
             }
         });
@@ -139,7 +137,7 @@ public class PhotoEventListener extends AsyncChildEventListener {
 
     // The caller must have set isDownloading = true for the photo!
     // Don't call from UI thread
-    private void updatePhotoFileIfNecessaryInternal(String photoId) {
+    private void downloadPhotoFileIfNecessaryInternal(String photoId) {
         Photo photo = database.galleryDao().loadPhoto(photoId);
 
         if (photo == null) {
@@ -150,11 +148,14 @@ public class PhotoEventListener extends AsyncChildEventListener {
         int targetResolution = ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL,
                 photo.onlineResolution);
 
-        if (targetResolution > photo.resolution) {
-            DatabaseReference photosRef = FirebaseDatabase.getInstance().getReference("photos");
-            photosRef.child(groupId).child(photoId).child("files").child(CURRENT_RESOLUTION_LEVEL)
-                    .addListenerForSingleValueEvent(new PhotoFileListener(photoId));
+        if (targetResolution <= photo.resolution) {
+            releaseDownload(photoId);
+            return;
         }
+
+        DatabaseReference photosRef = FirebaseDatabase.getInstance().getReference("photos");
+        photosRef.child(groupId).child(photoId).child("files").child(CURRENT_RESOLUTION_LEVEL)
+                .addListenerForSingleValueEvent(new PhotoFileListener(photoId));
     }
 
     private class UserNameEventListener extends AsyncValueEventListener {

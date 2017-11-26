@@ -88,19 +88,19 @@ public abstract class GalleryDao {
     public abstract LiveData<Album.Extended[]> loadAllAlbums();
 
     @Query("SELECT photoId, author, people, file, albumId, resolution, onlineResolution, "
-            + Photo.Extended.TYPE_ITEM + " AS itemType "
+            + Photo.Extended.TYPE_ITEM + " AS itemType, isDownloading "
             + "FROM Photo WHERE albumId = :albumId UNION ALL "
             + "SELECT DISTINCT people || '', '', people, '', '', 0, 0, "
-            + Photo.Extended.TYPE_PEOPLE_HEADER + " "
+            + Photo.Extended.TYPE_PEOPLE_HEADER + ", 0 "
             + "FROM Photo WHERE albumId = :albumId "
             + "ORDER BY people, itemType DESC")
     public abstract LiveData<Photo.Extended[]> loadAlbumsPhotosByPeople(String albumId);
 
     @Query("SELECT photoId, author, people, file, albumId, resolution, onlineResolution, "
-            + Photo.Extended.TYPE_ITEM + " AS itemType "
+            + Photo.Extended.TYPE_ITEM + " AS itemType, isDownloading "
             + "FROM Photo WHERE albumId = :albumId UNION ALL "
             + "SELECT DISTINCT author, author, 0, '', '', 0, 0, "
-            + Photo.Extended.TYPE_AUTHOR_HEADER + " "
+            + Photo.Extended.TYPE_AUTHOR_HEADER + ", 0 "
             + "FROM Photo WHERE albumId = :albumId "
             + "ORDER BY author, itemType DESC")
     public abstract LiveData<Photo.Extended[]> loadAlbumsPhotosByAuthor(String albumId);

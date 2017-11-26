@@ -49,6 +49,7 @@ public class Photo {
             if (this.itemType != TYPE_ITEM) return true;
 
             if (this.photo.people != other.photo.people) return false;
+            if (this.photo.isDownloading != other.photo.isDownloading) return false;
             if (!TextUtils.equals(this.photo.file, other.photo.file)) return false;
             if (!TextUtils.equals(this.photo.author, other.photo.author)) return false;
 
