@@ -2,6 +2,8 @@ package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -22,11 +24,18 @@ public class MainActivity extends AppCompatActivity {
     static final int REQUEST_PHOTO = 1;
 
     private File photoFile = null;
+    // The BroadcastReceiver that tracks network connectivity changes.
+    private NetworkChangeReceiver receiver = new NetworkChangeReceiver();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Register BroadcastReceiver to track network connection changes.
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        receiver = new NetworkChangeReceiver();
+        this.registerReceiver(receiver, filter);
 
 
 
