@@ -88,6 +88,9 @@ def delete(group_id, user_id):
 
 
 def stream_handler(message):
+    """
+    Monitor the group photo sharing
+    """
     try:
         if 'data' in message:
             if 'group' in message['data']:
