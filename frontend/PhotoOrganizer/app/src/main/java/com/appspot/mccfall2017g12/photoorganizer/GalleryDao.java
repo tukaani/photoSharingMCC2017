@@ -71,6 +71,9 @@ public abstract class GalleryDao {
         return file; // The new file is not used because it does not improve resolution.
     }
 
+    @Query("SELECT file FROM Photo WHERE photoId = :photoId")
+    public abstract String getPhotoFile(String photoId);
+
     @Query("SELECT EXISTS(SELECT 1 FROM PhotoSyncLock WHERE photoId=:photoId LIMIT 1)")
     protected abstract boolean isPhotoSyncing(String photoId);
 

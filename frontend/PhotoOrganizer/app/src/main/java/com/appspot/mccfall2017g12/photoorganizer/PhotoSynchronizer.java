@@ -2,6 +2,7 @@ package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.arch.lifecycle.LiveData;
 import android.content.Context;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.MainThread;
@@ -9,8 +10,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -18,8 +21,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
+import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -214,6 +219,67 @@ public class PhotoSynchronizer {
 
         @WorkerThread
         protected abstract void run();
+    }
+
+    public void uploadPhoto(final String photoId) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                new PhotoUpload(photoId).start();
+            }
+        });
+    }
+
+    public class PhotoUpload extends PhotoSync {
+
+        public PhotoUpload(String photoId) {
+            super(photoId);
+        }
+
+        @Override
+        protected void run() {
+            if (!shouldUpload(photoId)) {
+                release();
+                return;
+            }
+
+            final String localFilename = database.galleryDao().getPhotoFile(photoId);
+            if (localFilename == null) {
+                release();
+                return;
+            }
+
+            // if CURRENT_RESOLUTION_LEVEL = "low" shrink photo
+
+
+
+            final String filename = UUID.randomUUID().toString() + ".jpg";
+
+            StorageReference imagesRef = FirebaseStorage.getInstance().getReference("images");
+            StorageReference fileRef = imagesRef.child(groupId).child(filename);
+
+            File localFile = FileTools.get(filename);
+            fileRef.putFile(Uri.fromFile(localFile)).addOnCompleteListener(executor,
+                    new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                            DatabaseReference photosRef = FirebaseDatabase.getInstance().getReference("photos").child(groupId).child(photoId).child("files").child("full");
+                            photosRef.setValue(filename);
+                            release();
+                        }
+                    }
+
+            ).addOnFailureListener(executor,
+                    new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            release();
+                        }
+                    }
+            );
+
+            release();
+        }
     }
 
     public class PhotoDownload extends PhotoSync {

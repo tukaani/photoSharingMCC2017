@@ -6,10 +6,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.AdapterView;
@@ -21,7 +24,12 @@ import com.google.android.gms.vision.barcode.BarcodeDetector;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.io.File;
 import java.util.UUID;
@@ -30,6 +38,13 @@ public class MainActivity extends AppCompatActivity {
     static final int REQUEST_PHOTO = 1;
 
     private File photoFile = null;
+    private FirebaseAuth mAuth;
+    private DatabaseReference mDatabase;
+
+    //TODO !
+    private static volatile PhotoSynchronizer synchronizer;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +52,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
+        mAuth = FirebaseAuth.getInstance();
+        mDatabase = FirebaseDatabase.getInstance().getReference();
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
@@ -85,7 +102,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         if (!PhotoSynchronizer.isListening) {
-            new PhotoSynchronizer("a1", this).listen();
+            synchronizer = new PhotoSynchronizer("a1", this);
+            synchronizer.listen();
             PhotoSynchronizer.isListening = true;
         }
     }
@@ -110,18 +128,37 @@ public class MainActivity extends AppCompatActivity {
 
             Boolean isBarcode = hasBarcode(this.photoFile);
 
+            final Photo photo = new Photo();
+            photo.author = User.getUsername();
 
-            Photo photo = new Photo();
-            photo.author = "Me"; //TODO real user
-            photo.photoId = UUID.randomUUID().toString(); //TODO from firebase (unless private)
-            photo.file = this.photoFile.getName();
-            photo.albumId = Album.PRIVATE_ALBUM_ID;
-            photo.resolution.local = ResolutionTools.calculateResolution(
-                    this.photoFile.getAbsolutePath());
+
+
+
+            if(isBarcode) {
+                photo.albumId = Album.PRIVATE_ALBUM_ID;
+                photo.photoId = UUID.randomUUID().toString(); //TODO from firebase (unless private)
+            }
+            else {
+                photo.albumId = User.getGroupid();
+                DatabaseReference photoRef = mDatabase.child("photos").child(User.getGroupid()).push();
+                photoRef.child("username").setValue(User.getUsername());
+                photo.photoId = photoRef.getKey();
+            }
 
             GalleryDatabase.initialize(this);
-            if(isBarcode) new GalleryDatabase.InsertPhotoTask().execute(photo);
 
+            final File photoFile = this.photoFile;
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    GalleryDatabase.getInstance().galleryDao().insertPhotos(photo);
+                    GalleryDatabase.getInstance().galleryDao().tryUpdatePhotoFile(photo.photoId, photoFile.getName(),
+                            ResolutionTools.calculateResolution(photoFile.getAbsolutePath()));
+
+                    synchronizer.uploadPhoto(photo.photoId);
+                }
+            }).start();
         }
     }
 
@@ -136,6 +173,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        mAuth.signOut();
+        finish();
+    }
 }
 
 
