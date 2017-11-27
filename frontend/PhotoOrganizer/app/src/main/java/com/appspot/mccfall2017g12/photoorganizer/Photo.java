@@ -32,6 +32,11 @@ public class Photo {
         public int online;
     }
 
+    public static class FileInfo {
+        public String file;
+        public int resolution;
+    }
+
     public static class Extended implements Diffable<Extended>, CategoryItem {
 
         protected static final int TYPE_ITEM = 0;

@@ -6,7 +6,7 @@ package com.appspot.mccfall2017g12.photoorganizer;
 
 public class User {
     private static volatile String username;
-    private static volatile String groupid;
+    private static volatile String groupId;
 
     public static String getUsername() {
         return username;
@@ -16,11 +16,11 @@ public class User {
         User.username = username;
     }
 
-    public static String getGroupid() {
-        return groupid;
+    public static String getGroupId() {
+        return groupId;
     }
 
-    public static void setGroupid(String groupid) {
-        User.groupid = groupid;
+    public static void setGroupId(String groupId) {
+        User.groupId = groupId;
     }
 }

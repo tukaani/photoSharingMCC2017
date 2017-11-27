@@ -24,6 +24,8 @@ public abstract class GalleryDatabase extends RoomDatabase {
 
     public abstract GalleryDao galleryDao();
 
+    public abstract PhotoSyncDao photoSyncDao();
+
     public abstract static class Task<Params, Result>
             extends RelayPostExecutionTask<Params, Void, Result> {
 
