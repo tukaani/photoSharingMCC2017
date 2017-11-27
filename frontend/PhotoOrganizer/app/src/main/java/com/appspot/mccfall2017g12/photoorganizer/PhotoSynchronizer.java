@@ -34,7 +34,7 @@ public class PhotoSynchronizer {
     public volatile static boolean isListening = false;
 
     //TODO Should be calculated based on network state & settings
-    private final static String CURRENT_RESOLUTION_LEVEL = ResolutionTools.LEVEL_HIGH;
+    private final static String CURRENT_RESOLUTION_LEVEL = ResolutionTools.LEVEL_FULL;
 
     private final String groupId;
     private final GalleryDatabase database;
