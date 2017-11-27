@@ -11,7 +11,8 @@ import os
 import constants
 from urllib import parse
 import pyrebase
-
+import json
+from PIL import Image
 
 firebase_config = {
     "apiKey": os.environ.get('FIREBASE_API_KEY', None),
@@ -84,3 +85,28 @@ def delete(group_id, user_id):
         members.remove(user_id)
         database.child("group").child(
             group_id).child("members").set(members)
+
+
+def stream_handler(message):
+    try:
+        if 'data' in message:
+            if 'group' in message['data']:
+                print(message['data']['group'])
+                end_time = database.child('group').child(
+                    message['data']['group']).child('end_time').get().val()
+                end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
+
+                if end > datetime.datetime.now():
+                    print("Group is Valid..")
+                else:
+                    print("Expired ... Housekeeping begins...")
+                    group_id = message['data']['group']
+                    for file in storage.list_files():
+                        path, file = os.path.split(parse.unquote(file.path))
+                        if group_id in path:
+                            storage.delete(group_id + "/" + file)
+                    database.child("group").child(group_id).remove()
+    except Exception as ex:
+        pass
+
+my_stream = database.child("Photos").stream(stream_handler)
