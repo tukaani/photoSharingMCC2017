@@ -6,26 +6,35 @@ import android.net.NetworkInfo;
 
 public class CheckNetworkConnection {
 
-    //fetch information of the current active network
-    public static NetworkInfo getNetworkInfo(Context context){
+    public static int TYPE_NOT_CONNECTED=0;
+    public static int TYPE_WIFI=1;
+    public static int TYPE_MOBILE = 2;
+    public static final int NETWORK_STATUS_NOT_CONNECTED=0, NETWORK_STATUS_WIFI=1, NETWORK_STATUS_MOBILE=2;
+
+
+    public static int getConnectivityStatus(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        return cm.getActiveNetworkInfo();
-    }
-    //Check if the active network has connectivity
-    public static boolean isConnected(Context context){
-        NetworkInfo info = CheckNetworkConnection.getNetworkInfo(context);
-        return (info != null && info.isConnected());
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        if (null != activeNetwork) {
+            if(activeNetwork.getType() == ConnectivityManager.TYPE_WIFI)
+                return TYPE_WIFI;
+
+            if(activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
+                return TYPE_MOBILE;
+        }
+        return TYPE_NOT_CONNECTED;
     }
 
-   //Check if wifi connection exists
-    public static boolean isConnectedWifi(Context context){
-        NetworkInfo info = CheckNetworkConnection.getNetworkInfo(context);
-        return (info != null && info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI);
-    }
-
-    //Check if mobile network connection exists
-    public static boolean isConnectedMobile(Context context){
-        NetworkInfo info = CheckNetworkConnection.getNetworkInfo(context);
-        return (info != null && info.isConnected() && info.getType() == ConnectivityManager.TYPE_MOBILE);
+    public static int getConnectivityStatusString(Context context) {
+        int conn = CheckNetworkConnection.getConnectivityStatus(context);
+        int status = 0;
+        if (conn == CheckNetworkConnection.TYPE_WIFI) {
+            status = NETWORK_STATUS_WIFI;
+        } else if (conn == CheckNetworkConnection.TYPE_MOBILE) {
+            status =NETWORK_STATUS_MOBILE;
+        } else if (conn == CheckNetworkConnection.TYPE_NOT_CONNECTED) {
+            status = NETWORK_STATUS_NOT_CONNECTED;
+        }
+        return status;
     }
 }

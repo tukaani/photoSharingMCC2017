@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -44,12 +46,18 @@ public class MainActivity extends AppCompatActivity {
     //TODO !
     private static volatile PhotoSynchronizer synchronizer;
 
-
+    // The BroadcastReceiver that tracks network connectivity changes.
+    private NetworkChangeReceiver receiver = new NetworkChangeReceiver();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Register BroadcastReceiver to track network connection changes.
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        receiver = new NetworkChangeReceiver();
+        this.registerReceiver(receiver, filter);
 
 
         mAuth = FirebaseAuth.getInstance();
@@ -149,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
 
             final File photoFile = this.photoFile;
 
-            new Thread(new Runnable() {
+            ThreadTools.EXECUTOR.execute(new Runnable() {
                 @Override
                 public void run() {
                     GalleryDatabase.getInstance().galleryDao().insertPhotos(photo);
@@ -158,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
 
                     synchronizer.uploadPhoto(photo.photoId);
                 }
-            }).start();
+            });
         }
     }
 

@@ -19,6 +19,9 @@ public abstract class GalleryDao {
     @Query("SELECT * FROM Photo WHERE photoId = :photoId")
     public abstract Photo loadPhoto(String photoId);
 
+    @Query("SELECT EXISTS(SELECT 1 FROM Photo WHERE photoId = :photoId LIMIT 1)")
+    public abstract boolean photoExists(String photoId);
+
     @Query("UPDATE Photo SET people = :people WHERE photoId = :photoId")
     public abstract void updatePhotoPeople(String photoId, int people);
 
@@ -60,21 +63,27 @@ public abstract class GalleryDao {
         if (photo == null)
             return file; // No file is used because the photo does not exist.
 
+        String wasteFile;
+
         if (resolution > photo.resolution.local) {
             updatePhotoFile(photoId, file, resolution);
-            return photo.file; // File changed, the old file is no longer used.
+            wasteFile = photo.file; // File changed, the old file is no longer used.
+        }
+        else {
+            wasteFile = file; // The new file is not used because it doesn't improve resolution.
         }
 
         if (TextUtils.equals(file, photo.file))
-            return null; // The file is the same as the old one. No file should be deleted.
+            return null; // The new file is the same as the old one. No file should be deleted.
 
-        return file; // The new file is not used because it does not improve resolution.
+        return wasteFile;
     }
 
     @Query("SELECT file FROM Photo WHERE photoId = :photoId")
     public abstract String getPhotoFile(String photoId);
 
-    @Query("SELECT EXISTS(SELECT 1 FROM PhotoSyncLock WHERE photoId=:photoId LIMIT 1)")
+    @Query("SELECT EXISTS(SELECT 1 FROM PhotoSyncLock WHERE photoId = :photoId LIMIT 1)")
+
     protected abstract boolean isPhotoSyncing(String photoId);
 
     @Query("SELECT * FROM PhotoSyncLock WHERE photoId = :photoId")
@@ -100,11 +109,19 @@ public abstract class GalleryDao {
     @Delete
     public abstract void deletePhotos(Photo... photos);
 
+    @Transaction
+    @Query("SELECT photoId FROM Photo WHERE albumId = :albumId AND "
+            + "resolution_online > resolution_local AND resolution_local < :maxResolution")
+    public abstract String[] loadPhotosWithHigherOnlineResolution(String albumId,
+                                                                  int maxResolution);
+
+    @Transaction
     @Query("SELECT * FROM Album NATURAL LEFT OUTER JOIN "
             + "(SELECT albumId, COUNT(*) AS photoCount, MIN(file) AS file "
             + "FROM Photo GROUP BY albumId)")
     public abstract LiveData<Album.Extended[]> loadAllAlbums();
 
+    @Transaction
     @Query("SELECT photoId, author, people, file, albumId, resolution_local, resolution_online, "
             + Photo.Extended.TYPE_ITEM + " AS itemType "
             + "FROM Photo WHERE albumId = :albumId UNION ALL "
@@ -114,6 +131,7 @@ public abstract class GalleryDao {
             + "ORDER BY people, itemType DESC")
     public abstract LiveData<Photo.Extended[]> loadAlbumsPhotosByPeople(String albumId);
 
+    @Transaction
     @Query("SELECT photoId, author, people, file, albumId, resolution_local, resolution_online, "
             + Photo.Extended.TYPE_ITEM + " AS itemType "
             + "FROM Photo WHERE albumId = :albumId UNION ALL "

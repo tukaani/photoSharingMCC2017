@@ -41,26 +41,20 @@ public class ResolutionTools {
         return (p + q - 1) / q;
     }
 
-    public static int getResolution(String resolutionLevel, int fullResolution) {
-        int resolution;
-
+    public static int getResolution(String resolutionLevel) {
         switch (resolutionLevel) {
             case LEVEL_LOW:
-                resolution = RESOLUTION_LOW;
-                break;
+                return RESOLUTION_LOW;
             case LEVEL_HIGH:
-                resolution = RESOLUTION_HIGH;
-                break;
+                return RESOLUTION_HIGH;
             case LEVEL_FULL:
-                resolution = fullResolution;
-                break;
+                return Integer.MAX_VALUE;
             default:
                 throw new IllegalArgumentException();
         }
+    }
 
-        if (resolution > fullResolution)
-            resolution = fullResolution;
-
-        return resolution;
+    public static int getResolution(String resolutionLevel, int fullResolution) {
+        return Math.min(getResolution(resolutionLevel), fullResolution);
     }
 }

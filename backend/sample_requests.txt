@@ -1,3 +1,62 @@
+Group Management
+
+Create 
+http://0.0.0.0:8080/photoorganizer/api/v1.0/group/create
+
+Request:
+Headers
+Content-Type: application/json
+Authorization: ****(Firebase Auth token)
+
+Body:
+{'group_name': 'mm_1', 'validity': 1, 'author': '_dgrg_134'}
+
+Response:
+{
+    "group_id": "-KzsxP80fVnOiomq7n_Z",
+    "token": "67cc88c1-393c-4253-9e6c-8a00f98dd235"
+}
+
+
+Join
+http://0.0.0.0:8080/photoorganizer/api/v1.0/group/join
+
+Request:
+
+Headers
+Content-Type: application/json
+Authorization: ****(Firebase Auth token)
+
+Body
+{
+	"group_id": "-KzsLXYuvHIAH-5qoJjq",
+	"user_id":"skalai1"
+}
+Response:
+{
+    "refreshedtoken": "99b3b0ef-bd93-4499-b4d6-df06e822cb3e"
+}
+
+
+Leave/delete
+
+Request
+
+Headers
+Content-Type: application/json
+Authorization: ****(Firebase Auth token)
+Body:
+{
+	"group_id": "-KzsLXYuvHIAH-5qoJjq",
+	"user_id":"_dgrg_134"
+}
+
+Response
+{
+    "status": "success"
+}
+
+
 Detect People in the image
 curl -i http://0.0.0.0:8080/photoorganizer/api/v1.0/process?image_url="http://v3wall.com/wallpaper/1366_768/1002/1366_768_20100204012133711228.jpg"
 

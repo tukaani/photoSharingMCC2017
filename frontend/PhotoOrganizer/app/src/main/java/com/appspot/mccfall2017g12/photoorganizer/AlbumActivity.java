@@ -67,7 +67,12 @@ public class AlbumActivity extends AppCompatActivity {
                     snackbar.setAction(R.string.remove, new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            new GalleryDatabase.DeletePhotoTask().execute(photo);
+                            ThreadTools.EXECUTOR.execute(new Runnable() {
+                                @Override
+                                public void run() {
+                                    database.galleryDao().deletePhotos(photo);
+                                }
+                            });
                         }
                     });
                     snackbar.show();

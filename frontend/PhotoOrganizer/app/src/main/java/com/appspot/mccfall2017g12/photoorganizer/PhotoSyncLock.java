@@ -8,7 +8,7 @@ import android.support.annotation.NonNull;
 public class PhotoSyncLock {
     @PrimaryKey
     @NonNull
-    public String photoId;
+    public final String photoId;
 
     public PhotoSyncLock(String photoId) {
         this.photoId = photoId;

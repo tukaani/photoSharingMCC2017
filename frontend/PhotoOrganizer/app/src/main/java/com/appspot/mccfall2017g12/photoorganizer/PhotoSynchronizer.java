@@ -46,13 +46,31 @@ public class PhotoSynchronizer {
 
         this.groupId = groupId;
         this.database = GalleryDatabase.getInstance();
-        this.executor = Executors.newCachedThreadPool();
+        this.executor = ThreadTools.EXECUTOR;
         this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
     public void listen() {
         FirebaseDatabase.getInstance().getReference("photos").child(groupId)
                 .addChildEventListener(new PhotoEventListener());
+    }
+
+    // This should be called when network/settings change.
+    @WorkerThread
+    private void downloadAllImprovablePhotos() {
+        final String[] photoIds = database.galleryDao().loadPhotosWithHigherOnlineResolution(
+                groupId, ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL));
+
+        for (final String photoId : photoIds) {
+            if (shouldDownload(photoId)) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        new PhotoDownload(photoId).start();
+                    }
+                });
+            }
+        }
     }
 
     @WorkerThread
@@ -92,10 +110,8 @@ public class PhotoSynchronizer {
         public void onChildAddedAsync(final DataSnapshot dataSnapshot, String previousChildName) {
             String photoId = dataSnapshot.getKey();
 
-            Photo photo = database.galleryDao().loadPhoto(photoId);
-
-            if (photo == null) {
-                photo = new Photo();
+            if (!database.galleryDao().photoExists(photoId)) {
+                Photo photo = new Photo();
                 photo.photoId = photoId;
                 photo.albumId = groupId;
                 photo.resolution.local = -1;
