@@ -10,10 +10,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -26,7 +24,6 @@ import com.google.firebase.storage.UploadTask;
 import java.io.File;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 public class PhotoSynchronizer {
 
@@ -40,6 +37,8 @@ public class PhotoSynchronizer {
     private final GalleryDatabase database;
     private final Handler mainHandler;
     private final Executor executor;
+    private final FirebaseDatabase firebaseDatabase;
+    private final FirebaseStorage firebaseStorage;
 
     public PhotoSynchronizer(String groupId, Context context) {
         GalleryDatabase.initialize(context);
@@ -48,11 +47,19 @@ public class PhotoSynchronizer {
         this.database = GalleryDatabase.getInstance();
         this.executor = ThreadTools.EXECUTOR;
         this.mainHandler = new Handler(Looper.getMainLooper());
+        this.firebaseDatabase = FirebaseDatabase.getInstance();
+        this.firebaseStorage = FirebaseStorage.getInstance();
     }
 
     public void listen() {
-        FirebaseDatabase.getInstance().getReference("photos").child(groupId)
-                .addChildEventListener(new PhotoEventListener());
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                database.photoSyncDao().releaseAll();
+                firebaseDatabase.getReference("photos").child(groupId)
+                        .addChildEventListener(new PhotoEventListener());
+            }
+        });
     }
 
     // This should be called when network/settings change.
@@ -147,7 +154,7 @@ public class PhotoSynchronizer {
             String photoId = dataSnapshot.getKey();
             String userId = dataSnapshot.child("author").getValue(String.class);
 
-            DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users");
+            DatabaseReference usersRef = firebaseDatabase.getReference("users");
 
             usersRef.child(userId).child("username").addListenerForSingleValueEvent(
                     new UserNameEventListener(photoId));
@@ -211,8 +218,7 @@ public class PhotoSynchronizer {
 
         @MainThread
         public void start() {
-            final LiveData<PhotoSyncLock> observable =
-                    database.galleryDao().getPhotoSyncLock(photoId);
+            final LiveData<PhotoSyncLock> observable = database.photoSyncDao().get(photoId);
 
             observable.observeForever(new AsyncObserver<PhotoSyncLock>(executor, mainHandler) {
                 @Override
@@ -220,7 +226,7 @@ public class PhotoSynchronizer {
                 protected void onChangedAsync(@Nullable PhotoSyncLock photoSyncLock) {
                     if (photoSyncLock != null) return;
 
-                    if (database.galleryDao().tryStartPhotoSync(photoId)) {
+                    if (database.photoSyncDao().tryStart(photoId)) {
                         removeFrom(observable);
                         run();
                     }
@@ -230,7 +236,7 @@ public class PhotoSynchronizer {
 
         @WorkerThread
         protected void release() {
-            database.galleryDao().releasePhotoSync(new PhotoSyncLock(photoId));
+            database.photoSyncDao().release(new PhotoSyncLock(photoId));
         }
 
         @WorkerThread
@@ -248,6 +254,8 @@ public class PhotoSynchronizer {
 
     public class PhotoUpload extends PhotoSync {
 
+        private volatile Photo.FileInfo volatileFileInfo;
+
         public PhotoUpload(String photoId) {
             super(photoId);
         }
@@ -259,46 +267,74 @@ public class PhotoSynchronizer {
                 return;
             }
 
-            final String localFilename = database.galleryDao().getPhotoFile(photoId);
-            if (localFilename == null) {
+            Photo.FileInfo localFileInfo = database.galleryDao().loadPhotoFileInfo(photoId);
+
+            if (localFileInfo == null) {
                 release();
                 return;
             }
 
-            // if CURRENT_RESOLUTION_LEVEL = "low" shrink photo
+            // if CURRENT_RESOLUTION_LEVEL = "low" or "high" shrink photo
 
+            Photo.FileInfo onlineFileInfo = new Photo.FileInfo();
+            onlineFileInfo.file = UUID.randomUUID().toString() + ".jpg";
+            onlineFileInfo.resolution = localFileInfo.resolution;
 
+            volatileFileInfo = onlineFileInfo;
 
-            final String filename = UUID.randomUUID().toString() + ".jpg";
+            File localFile = FileTools.get(localFileInfo.file);
 
-            StorageReference imagesRef = FirebaseStorage.getInstance().getReference("images");
-            StorageReference fileRef = imagesRef.child(groupId).child(filename);
+            StorageReference imagesRef = firebaseStorage.getReference("images");
+            StorageReference fileRef = imagesRef.child(groupId).child(onlineFileInfo.file);
 
-            File localFile = FileTools.get(filename);
-            fileRef.putFile(Uri.fromFile(localFile)).addOnCompleteListener(executor,
-                    new OnCompleteListener<UploadTask.TaskSnapshot>() {
-                        @Override
-                        public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
-                            DatabaseReference photosRef = FirebaseDatabase.getInstance().getReference("photos").child(groupId).child(photoId).child("files").child("full");
-                            photosRef.setValue(filename);
-                            release();
-                        }
-                    }
+            FileUploadListener listener = new FileUploadListener();
 
-            ).addOnFailureListener(executor,
-                    new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            release();
-                        }
-                    }
-            );
+            fileRef.putFile(Uri.fromFile(localFile))
+                    .addOnSuccessListener(executor, listener)
+                    .addOnFailureListener(executor, listener);
 
             release();
+        }
+
+        private class FileUploadListener implements OnFailureListener,
+                OnSuccessListener<UploadTask.TaskSnapshot> {
+
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                release();
+            }
+
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot result) {
+                DatabaseReference photosRef = firebaseDatabase.getReference(
+                        "photos").child(groupId).child(photoId).child("files/full");
+
+                SetFilenameListener listener = new SetFilenameListener();
+                photosRef.setValue(volatileFileInfo.file)
+                        .addOnSuccessListener(executor, listener)
+                        .addOnFailureListener(executor, listener);
+            }
+        }
+
+        private class SetFilenameListener implements OnFailureListener, OnSuccessListener<Void> {
+
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                release();
+            }
+
+            @Override
+            public void onSuccess(Void aVoid) {
+                database.galleryDao().improvePhotoOnlineResolution(photoId,
+                        volatileFileInfo.resolution);
+                release();
+            }
         }
     }
 
     public class PhotoDownload extends PhotoSync {
+
+        private volatile String volatileFilename;
 
         public PhotoDownload(String photoId) {
             super(photoId);
@@ -312,25 +348,20 @@ public class PhotoSynchronizer {
                 return;
             }
 
-            DatabaseReference photosRef = FirebaseDatabase.getInstance().getReference("photos");
+            DatabaseReference photosRef = firebaseDatabase.getReference("photos");
             photosRef.child(groupId).child(photoId).child("files").child(CURRENT_RESOLUTION_LEVEL)
-                    .addListenerForSingleValueEvent(new PhotoFileListener(photoId));
+                    .addListenerForSingleValueEvent(new GetFilenameListener());
         }
 
-        private class PhotoFileListener extends AsyncValueEventListener
-                implements OnSuccessListener<FileDownloadTask.TaskSnapshot>, OnFailureListener {
+        private class GetFilenameListener extends AsyncValueEventListener {
 
-            private final String photoId;
-            private volatile String volatileFilename;
-
-            public PhotoFileListener(String photoId) {
+            public GetFilenameListener() {
                 super(executor);
-                this.photoId = photoId;
             }
 
             @Override
             @WorkerThread
-            public void onDataChangeAsync(final DataSnapshot dataSnapshot) {
+            public void onDataChangeAsync(DataSnapshot dataSnapshot) {
                 String filename = dataSnapshot.getValue(String.class);
 
                 if (filename == null) {
@@ -340,12 +371,15 @@ public class PhotoSynchronizer {
 
                 volatileFilename = filename;
 
-                StorageReference imagesRef = FirebaseStorage.getInstance().getReference("images");
+                StorageReference imagesRef = firebaseStorage.getReference("images");
                 StorageReference fileRef = imagesRef.child(groupId).child(filename);
 
+                FileDownloadListener listener = new FileDownloadListener();
+
                 File localFile = FileTools.get(filename);
-                fileRef.getFile(localFile).addOnSuccessListener(executor, this)
-                        .addOnFailureListener(executor, this);
+                fileRef.getFile(localFile)
+                        .addOnSuccessListener(executor, listener)
+                        .addOnFailureListener(executor, listener);
             }
 
             @Override
@@ -353,6 +387,10 @@ public class PhotoSynchronizer {
             public void onCancelledAsync(DatabaseError databaseError) {
                 release();
             }
+        }
+
+        private class FileDownloadListener implements OnFailureListener,
+                OnSuccessListener<FileDownloadTask.TaskSnapshot>  {
 
             @Override
             @WorkerThread

@@ -16,13 +16,13 @@ public abstract class GalleryDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     public abstract void insertPhotos(Photo... photos);
 
-    @Query("SELECT * FROM Photo WHERE photoId = :photoId")
-    public abstract Photo loadPhoto(String photoId);
+    @Query("SELECT file, resolution_local as resolution FROM Photo WHERE photoId = :photoId")
+    public abstract Photo.FileInfo loadPhotoFileInfo(String photoId);
 
     @Query("SELECT EXISTS(SELECT 1 FROM Photo WHERE photoId = :photoId LIMIT 1)")
     public abstract boolean photoExists(String photoId);
 
-    @Query("UPDATE Photo SET people = :people WHERE photoId = :photoId")
+    @Query("UPDATE Photo SET people = :people WHERE photoId = :photoId AND people <> :people")
     public abstract void updatePhotoPeople(String photoId, int people);
 
     @Query("UPDATE Photo SET resolution_online = :onlineResolution WHERE photoId = :photoId")
@@ -58,49 +58,25 @@ public abstract class GalleryDao {
     @Transaction
     @Nullable
     public String tryUpdatePhotoFile(String photoId, String file, int resolution) {
-        Photo photo = loadPhoto(photoId);
+        Photo.FileInfo photoFileInfo = loadPhotoFileInfo(photoId);
 
-        if (photo == null)
+        if (photoFileInfo == null)
             return file; // No file is used because the photo does not exist.
 
         String wasteFile;
 
-        if (resolution > photo.resolution.local) {
+        if (resolution > photoFileInfo.resolution) {
             updatePhotoFile(photoId, file, resolution);
-            wasteFile = photo.file; // File changed, the old file is no longer used.
+            wasteFile = photoFileInfo.file; // File changed, the old file is no longer used.
         }
         else {
             wasteFile = file; // The new file is not used because it doesn't improve resolution.
         }
 
-        if (TextUtils.equals(file, photo.file))
+        if (TextUtils.equals(file, photoFileInfo.file))
             return null; // The new file is the same as the old one. No file should be deleted.
 
         return wasteFile;
-    }
-
-    @Query("SELECT file FROM Photo WHERE photoId = :photoId")
-    public abstract String getPhotoFile(String photoId);
-
-    @Query("SELECT EXISTS(SELECT 1 FROM PhotoSyncLock WHERE photoId = :photoId LIMIT 1)")
-
-    protected abstract boolean isPhotoSyncing(String photoId);
-
-    @Query("SELECT * FROM PhotoSyncLock WHERE photoId = :photoId")
-    public abstract LiveData<PhotoSyncLock> getPhotoSyncLock(String photoId);
-
-    @Insert
-    protected abstract void startPhotoSync(PhotoSyncLock photoSyncLock);
-
-    @Delete
-    public abstract void releasePhotoSync(PhotoSyncLock photoSyncLock);
-
-    @Transaction
-    public boolean tryStartPhotoSync(String photoId) {
-        if (isPhotoSyncing(photoId))
-            return false;
-        startPhotoSync(new PhotoSyncLock(photoId));
-        return true;
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

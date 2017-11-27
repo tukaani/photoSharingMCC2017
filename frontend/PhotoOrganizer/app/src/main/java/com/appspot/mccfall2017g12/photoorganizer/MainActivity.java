@@ -8,13 +8,10 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.AdapterView;
@@ -23,15 +20,10 @@ import android.widget.Toast;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
-import com.google.android.gms.vision.face.Face;
-import com.google.android.gms.vision.face.FaceDetector;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.io.File;
 import java.util.UUID;
@@ -110,8 +102,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
         if (!PhotoSynchronizer.isListening) {
-            synchronizer = new PhotoSynchronizer("a1", this);
+            PhotoSynchronizer synchronizer = new PhotoSynchronizer(User.getGroupId(), this);
             synchronizer.listen();
+            MainActivity.synchronizer = synchronizer;
             PhotoSynchronizer.isListening = true;
         }
     }
@@ -133,33 +126,29 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_PHOTO && resultCode == RESULT_OK) {
-
-            Boolean isBarcode = hasBarcode(this.photoFile);
-
-            final Photo photo = new Photo();
-            photo.author = User.getUsername();
-
-
-
-
-            if(isBarcode) {
-                photo.albumId = Album.PRIVATE_ALBUM_ID;
-                photo.photoId = UUID.randomUUID().toString(); //TODO from firebase (unless private)
-            }
-            else {
-                photo.albumId = User.getGroupid();
-                DatabaseReference photoRef = mDatabase.child("photos").child(User.getGroupid()).push();
-                photoRef.child("author").setValue(mAuth.getCurrentUser().getUid());
-                photo.photoId = photoRef.getKey();
-            }
-
-            GalleryDatabase.initialize(this);
-
             final File photoFile = this.photoFile;
 
             ThreadTools.EXECUTOR.execute(new Runnable() {
                 @Override
                 public void run() {
+
+                    Boolean isBarcode = hasBarcode(photoFile);
+
+                    Photo photo = new Photo();
+                    photo.author = User.getUsername();
+
+                    if(isBarcode) {
+                        photo.albumId = Album.PRIVATE_ALBUM_ID;
+                        photo.photoId = UUID.randomUUID().toString();
+                    }
+                    else {
+                        photo.albumId = User.getGroupId();
+                        DatabaseReference photoRef = mDatabase.child("photos").child(User.getGroupId()).push();
+                        photoRef.child("author").setValue(mAuth.getCurrentUser().getUid());
+                        photo.photoId = photoRef.getKey();
+                    }
+
+                    GalleryDatabase.initialize(MainActivity.this);
                     GalleryDatabase.getInstance().galleryDao().insertPhotos(photo);
                     GalleryDatabase.getInstance().galleryDao().tryUpdatePhotoFile(photo.photoId, photoFile.getName(),
                             ResolutionTools.calculateResolution(photoFile.getAbsolutePath()));
