@@ -149,7 +149,7 @@ public class PhotoSynchronizer {
 
             DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users");
 
-            usersRef.child(userId).child("name").addListenerForSingleValueEvent(
+            usersRef.child(userId).child("username").addListenerForSingleValueEvent(
                     new UserNameEventListener(photoId));
         }
 

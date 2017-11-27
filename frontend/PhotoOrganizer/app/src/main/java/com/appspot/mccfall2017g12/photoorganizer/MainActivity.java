@@ -149,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
             else {
                 photo.albumId = User.getGroupid();
                 DatabaseReference photoRef = mDatabase.child("photos").child(User.getGroupid()).push();
-                photoRef.child("username").setValue(User.getUsername());
+                photoRef.child("author").setValue(mAuth.getCurrentUser().getUid());
                 photo.photoId = photoRef.getKey();
             }
 
