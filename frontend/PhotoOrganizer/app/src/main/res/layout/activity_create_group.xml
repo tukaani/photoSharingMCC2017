@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:orientation="vertical"
+        android:layout_height="fill_parent">
+
+        <!--Put form controls here-->
+
+        <TextView
+            android:id="@+id/TextViewTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/groupstitle"
+            android:textSize="10pt">
+        </TextView>
+
+        <EditText
+            android:id="@+id/GroupName"
+            android:layout_height="wrap_content"
+            android:hint="@string/groupname"
+            android:inputType="textPersonName"
+            android:layout_width="fill_parent">
+        </EditText>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select group expiration time"
+            android:id="@+id/time_button">
+        </Button>
+
+
+
+
+    </LinearLayout>
+
+</android.support.constraint.ConstraintLayout>

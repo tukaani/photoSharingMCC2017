@@ -77,9 +77,9 @@ public class MainActivity extends AppCompatActivity {
             new MenuItem(R.string.groups, R.drawable.ic_group_black_24dp) {
                 @Override
                 public void launch(Context context) {
-                    //TODO
-
-                    Toast.makeText(context, "Don't be alone!", Toast.LENGTH_SHORT).show();
+                    //TODO Toast.makeText(context, "Don't be alone!", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(MainActivity.this, GroupManagementActivity.class);
+                    MainActivity.this.startActivity(intent);
                 }
             },
             new MenuItem(R.string.settings, R.drawable.ic_settings_black_24dp) {

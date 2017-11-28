@@ -29,4 +29,11 @@
     <string name="file_does_not_exists">The image file does not exist. Do you want to remove this item?</string>
     <string name="remove">Remove</string>
     <string name="unknown">(unknown)</string>
+    
+    <string name="creategroup">Create group</string>
+    <string name="joingroup">Join group</string>
+    <string name="leavegroup">Leave/delete group</string>
+
+    <string name="groupstitle">Fill in the group information</string>
+    <string name="groupname">Name of the group</string>
 </resources>
