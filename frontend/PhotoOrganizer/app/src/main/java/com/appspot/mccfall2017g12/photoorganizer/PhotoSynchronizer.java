@@ -1,6 +1,16 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.arch.lifecycle.LiveData;
+import android.arch.persistence.room.Dao;
+import android.arch.persistence.room.Database;
+import android.arch.persistence.room.Delete;
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Insert;
+import android.arch.persistence.room.PrimaryKey;
+import android.arch.persistence.room.Query;
+import android.arch.persistence.room.Room;
+import android.arch.persistence.room.RoomDatabase;
+import android.arch.persistence.room.Transaction;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
@@ -34,17 +44,17 @@ public class PhotoSynchronizer {
     private final static String CURRENT_RESOLUTION_LEVEL = ResolutionTools.LEVEL_FULL;
 
     private final String groupId;
-    private final GalleryDatabase database;
+    private final LocalDatabase database;
+    private final PhotoSyncDatabase photoSyncDb;
     private final Handler mainHandler;
     private final Executor executor;
     private final FirebaseDatabase firebaseDatabase;
     private final FirebaseStorage firebaseStorage;
 
     public PhotoSynchronizer(String groupId, Context context) {
-        GalleryDatabase.initialize(context);
-
         this.groupId = groupId;
-        this.database = GalleryDatabase.getInstance();
+        this.database = LocalDatabase.getInstance(context);
+        this.photoSyncDb = Room.inMemoryDatabaseBuilder(context, PhotoSyncDatabase.class).build();
         this.executor = ThreadTools.EXECUTOR;
         this.mainHandler = new Handler(Looper.getMainLooper());
         this.firebaseDatabase = FirebaseDatabase.getInstance();
@@ -52,12 +62,15 @@ public class PhotoSynchronizer {
     }
 
     public void listen() {
-        executor.execute(new Runnable() {
+        firebaseDatabase.getReference("photos").child(groupId)
+                .addChildEventListener(new PhotoEventListener());
+    }
+
+    public void uploadPhoto(final String photoId) {
+        mainHandler.post(new Runnable() {
             @Override
             public void run() {
-                database.photoSyncDao().releaseAll();
-                firebaseDatabase.getReference("photos").child(groupId)
-                        .addChildEventListener(new PhotoEventListener());
+                new PhotoUpload(photoId).start();
             }
         });
     }
@@ -74,6 +87,24 @@ public class PhotoSynchronizer {
                     @Override
                     public void run() {
                         new PhotoDownload(photoId).start();
+                    }
+                });
+            }
+        }
+    }
+
+    // This should be called when network/settings change.
+    @WorkerThread
+    private void uploadAllImprovablePhotos() {
+        final String[] photoIds = database.galleryDao().loadPhotosWithHigherLocalResolution(
+                groupId, ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL));
+
+        for (final String photoId : photoIds) {
+            if (shouldUpload(photoId)) {
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        new PhotoUpload(photoId).start();
                     }
                 });
             }
@@ -218,7 +249,7 @@ public class PhotoSynchronizer {
 
         @MainThread
         public void start() {
-            final LiveData<PhotoSyncLock> observable = database.photoSyncDao().get(photoId);
+            final LiveData<PhotoSyncLock> observable = photoSyncDb.dao().get(photoId);
 
             observable.observeForever(new AsyncObserver<PhotoSyncLock>(executor, mainHandler) {
                 @Override
@@ -226,7 +257,7 @@ public class PhotoSynchronizer {
                 protected void onChangedAsync(@Nullable PhotoSyncLock photoSyncLock) {
                     if (photoSyncLock != null) return;
 
-                    if (database.photoSyncDao().tryStart(photoId)) {
+                    if (photoSyncDb.dao().tryStart(photoId)) {
                         removeFrom(observable);
                         run();
                     }
@@ -236,20 +267,11 @@ public class PhotoSynchronizer {
 
         @WorkerThread
         protected void release() {
-            database.photoSyncDao().release(new PhotoSyncLock(photoId));
+            photoSyncDb.dao().release(new PhotoSyncLock(photoId));
         }
 
         @WorkerThread
         protected abstract void run();
-    }
-
-    public void uploadPhoto(final String photoId) {
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                new PhotoUpload(photoId).start();
-            }
-        });
     }
 
     public class PhotoUpload extends PhotoSync {
@@ -284,8 +306,8 @@ public class PhotoSynchronizer {
 
             File localFile = FileTools.get(localFileInfo.file);
 
-            StorageReference imagesRef = firebaseStorage.getReference("images");
-            StorageReference fileRef = imagesRef.child(groupId).child(onlineFileInfo.file);
+            StorageReference fileRef = firebaseStorage.getReference("images")
+                    .child(groupId).child(onlineFileInfo.file);
 
             FileUploadListener listener = new FileUploadListener();
 
@@ -306,17 +328,18 @@ public class PhotoSynchronizer {
 
             @Override
             public void onSuccess(UploadTask.TaskSnapshot result) {
-                DatabaseReference photosRef = firebaseDatabase.getReference(
-                        "photos").child(groupId).child(photoId).child("files/full");
+                DatabaseReference filenameRef = firebaseDatabase.
+                        getReference("photos").child(groupId).child(photoId).child("files/full");
 
-                SetFilenameListener listener = new SetFilenameListener();
-                photosRef.setValue(volatileFileInfo.file)
+                FilenamePushListener listener = new FilenamePushListener();
+                filenameRef.setValue(volatileFileInfo.file)
                         .addOnSuccessListener(executor, listener)
                         .addOnFailureListener(executor, listener);
             }
         }
 
-        private class SetFilenameListener implements OnFailureListener, OnSuccessListener<Void> {
+        private class FilenamePushListener implements OnFailureListener,
+                OnSuccessListener<Void> {
 
             @Override
             public void onFailure(@NonNull Exception e) {
@@ -350,12 +373,12 @@ public class PhotoSynchronizer {
 
             DatabaseReference photosRef = firebaseDatabase.getReference("photos");
             photosRef.child(groupId).child(photoId).child("files").child(CURRENT_RESOLUTION_LEVEL)
-                    .addListenerForSingleValueEvent(new GetFilenameListener());
+                    .addListenerForSingleValueEvent(new FilenamePullListener());
         }
 
-        private class GetFilenameListener extends AsyncValueEventListener {
+        private class FilenamePullListener extends AsyncValueEventListener {
 
-            public GetFilenameListener() {
+            public FilenamePullListener() {
                 super(executor);
             }
 
@@ -371,8 +394,8 @@ public class PhotoSynchronizer {
 
                 volatileFilename = filename;
 
-                StorageReference imagesRef = firebaseStorage.getReference("images");
-                StorageReference fileRef = imagesRef.child(groupId).child(filename);
+                StorageReference fileRef = firebaseStorage.getReference("images")
+                        .child(groupId).child(filename);
 
                 FileDownloadListener listener = new FileDownloadListener();
 
@@ -407,6 +430,8 @@ public class PhotoSynchronizer {
                 if (fileToBeRemoved != null)
                     FileTools.get(fileToBeRemoved).delete();
 
+                database.galleryDao().improvePhotoOnlineResolution(photoId, resolution);
+
                 release();
             }
 
@@ -415,6 +440,49 @@ public class PhotoSynchronizer {
             public void onFailure(@NonNull Exception e) {
                 release();
             }
+        }
+    }
+
+    @Database(entities = PhotoSyncLock.class, version = 1, exportSchema = false)
+    static abstract class PhotoSyncDatabase extends RoomDatabase {
+        public abstract PhotoSyncDao dao();
+    }
+
+    @Dao
+    static abstract class PhotoSyncDao {
+
+        @Query("SELECT EXISTS(SELECT 1 FROM PhotoSyncLock WHERE photoId = :photoId LIMIT 1)")
+        protected abstract boolean has(String photoId);
+
+        @Query("SELECT * FROM PhotoSyncLock WHERE photoId = :photoId")
+        public abstract LiveData<PhotoSyncLock> get(String photoId);
+
+        @Insert
+        protected abstract void start(PhotoSyncLock photoSyncLock);
+
+        @Delete
+        public abstract void release(PhotoSyncLock photoSyncLock);
+
+        @Transaction
+        public boolean tryStart(String photoId) {
+            if (has(photoId))
+                return false;
+            start(new PhotoSyncLock(photoId));
+            return true;
+        }
+
+        @Query("DELETE FROM PhotoSyncLock")
+        public abstract void releaseAll();
+    }
+
+    @Entity
+    static class PhotoSyncLock {
+        @PrimaryKey
+        @NonNull
+        public final String photoId;
+
+        public PhotoSyncLock(String photoId) {
+            this.photoId = photoId;
         }
     }
 }

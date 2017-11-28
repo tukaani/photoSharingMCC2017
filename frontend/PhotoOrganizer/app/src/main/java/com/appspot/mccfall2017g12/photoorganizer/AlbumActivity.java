@@ -21,7 +21,7 @@ public class AlbumActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private PhotoAdapter adapter;
     private String albumId;
-    private GalleryDatabase database;
+    private LocalDatabase database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,8 +37,7 @@ public class AlbumActivity extends AppCompatActivity {
         else
             throw new IllegalArgumentException("Album key missing.");
 
-        GalleryDatabase.initialize(this);
-        database = GalleryDatabase.getInstance();
+        database = LocalDatabase.getInstance(this);
 
         this.recyclerView = findViewById(R.id.photos_recycler_view);
         this.recyclerView.setHasFixedSize(true);

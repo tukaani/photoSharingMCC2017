@@ -11,6 +11,7 @@ public class GalleryActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private AlbumAdapter adapter;
+    private LocalDatabase database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,7 +20,7 @@ public class GalleryActivity extends AppCompatActivity {
 
         final int columnCount = getResources().getInteger(R.integer.album_column_count);
 
-        GalleryDatabase.initialize(this );
+        this.database = LocalDatabase.getInstance(this);
 
         this.recyclerView = findViewById(R.id.albums_recycler_view);
         this.recyclerView.setHasFixedSize(true);
@@ -40,19 +41,24 @@ public class GalleryActivity extends AppCompatActivity {
         GridLayoutManager layoutManager = new GridLayoutManager(this, columnCount);
         this.recyclerView.setLayoutManager(layoutManager);
 
-        this.adapter.setLiveData(GalleryDatabase.getInstance().galleryDao().loadAllAlbums());
+        this.adapter.setLiveData(database.galleryDao().loadAllAlbums());
 
         //TODO Remove
         {
-            Album album1 = new Album();
+            final Album album1 = new Album();
             album1.albumId = Album.PRIVATE_ALBUM_ID;
             album1.name = "Private";
 
-            Album album2 = new Album();
+            final Album album2 = new Album();
             album2.albumId = User.getGroupId();
             album2.name = "Happy Hour";
 
-            new GalleryDatabase.InsertAlbumTask().execute(album1, album2);
+            ThreadTools.EXECUTOR.execute(new Runnable() {
+                @Override
+                public void run() {
+                    database.galleryDao().insertAlbums(album1, album2);
+                }
+            });
         }
     }
 }

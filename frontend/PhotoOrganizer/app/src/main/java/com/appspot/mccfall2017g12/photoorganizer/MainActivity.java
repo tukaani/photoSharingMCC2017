@@ -32,14 +32,21 @@ public class MainActivity extends AppCompatActivity {
     static final int REQUEST_PHOTO = 1;
 
     private File photoFile = null;
-    private FirebaseAuth mAuth;
-    private DatabaseReference mDatabase;
+    private final FirebaseAuth mAuth;
+    private final FirebaseDatabase mFirebaseDatabase;
+    private final LocalDatabase mDatabase;
 
     //TODO !
     private static volatile PhotoSynchronizer synchronizer;
 
     // The BroadcastReceiver that tracks network connectivity changes.
     private NetworkChangeReceiver receiver = new NetworkChangeReceiver();
+
+    public MainActivity() {
+        mAuth = FirebaseAuth.getInstance();
+        mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mDatabase = LocalDatabase.getInstance(this);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,10 +57,6 @@ public class MainActivity extends AppCompatActivity {
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         receiver = new NetworkChangeReceiver();
         this.registerReceiver(receiver, filter);
-
-
-        mAuth = FirebaseAuth.getInstance();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
@@ -127,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_PHOTO && resultCode == RESULT_OK) {
             final File photoFile = this.photoFile;
+            final String uid = mAuth.getCurrentUser().getUid();
 
             ThreadTools.EXECUTOR.execute(new Runnable() {
                 @Override
@@ -143,14 +147,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else {
                         photo.albumId = User.getGroupId();
-                        DatabaseReference photoRef = mDatabase.child("photos").child(User.getGroupId()).push();
-                        photoRef.child("author").setValue(mAuth.getCurrentUser().getUid());
+                        DatabaseReference photoRef = mFirebaseDatabase
+                                .getReference("photos").child(User.getGroupId()).push();
+                        photoRef.child("author").setValue(uid);
                         photo.photoId = photoRef.getKey();
                     }
 
-                    GalleryDatabase.initialize(MainActivity.this);
-                    GalleryDatabase.getInstance().galleryDao().insertPhotos(photo);
-                    GalleryDatabase.getInstance().galleryDao().tryUpdatePhotoFile(photo.photoId, photoFile.getName(),
+                    mDatabase.galleryDao().insertPhotos(photo);
+                    mDatabase.galleryDao().tryUpdatePhotoFile(photo.photoId, photoFile.getName(),
                             ResolutionTools.calculateResolution(photoFile.getAbsolutePath()));
 
                     synchronizer.uploadPhoto(photo.photoId);

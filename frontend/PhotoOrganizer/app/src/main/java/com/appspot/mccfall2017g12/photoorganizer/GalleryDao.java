@@ -25,16 +25,9 @@ public abstract class GalleryDao {
     @Query("UPDATE Photo SET people = :people WHERE photoId = :photoId AND people <> :people")
     public abstract void updatePhotoPeople(String photoId, int people);
 
-    @Query("UPDATE Photo SET resolution_online = :onlineResolution WHERE photoId = :photoId")
-    protected abstract void updatePhotoOnlineResolution(String photoId, int onlineResolution);
-
-    @Transaction
-    public void improvePhotoOnlineResolution(String photoId, int onlineResolution) {
-        Photo.ResolutionInfo resolution = loadPhotoResolution(photoId);
-
-        if (onlineResolution > resolution.online)
-            updatePhotoOnlineResolution(photoId, onlineResolution);
-    }
+    @Query("UPDATE Photo SET resolution_online = :onlineResolution WHERE photoId = :photoId "
+            + "AND resolution_online < :onlineResolution")
+    protected abstract void improvePhotoOnlineResolution(String photoId, int onlineResolution);
 
     @Query("SELECT resolution_local AS local, resolution_online AS online "
             + "FROM Photo WHERE photoId = :photoId")
@@ -90,6 +83,11 @@ public abstract class GalleryDao {
             + "resolution_online > resolution_local AND resolution_local < :maxResolution")
     public abstract String[] loadPhotosWithHigherOnlineResolution(String albumId,
                                                                   int maxResolution);
+
+    @Transaction
+    @Query("SELECT photoId FROM Photo WHERE albumId = :albumId AND "
+            + "resolution_local > resolution_online AND resolution_online < :maxResolution")
+    public abstract String[] loadPhotosWithHigherLocalResolution(String albumId, int maxResolution);
 
     @Transaction
     @Query("SELECT * FROM Album NATURAL LEFT OUTER JOIN "
