@@ -105,26 +105,32 @@ def housekeeper_daemon():
             group_ids = database.child("Photos").get()
             for grp in group_ids.each():
                 batch_delete(group=grp.key())
-            time.sleep(60) #TODO:configure this value sensibily
+            time.sleep(int(os.environ.get('HOUSEKEEPING_INTERVAL',60)))
     except Exception as ex:
-        pass
+        logging.info(ex)
+        housekeeper_daemon()
 
 
 def batch_delete(group):
     """ Delete InActive Groups"""
-    end_time = database.child('Photos').child(
+    try:
+        end_time = database.child('Photos').child(
         group).child('end_time').get().val()
-    end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
-    if end > datetime.datetime.now():
-        print("Group is valid..")
-    else:
-        print("Ĝroup validity Expired ... Housekeeping(daemon) begins...")
-        for file in storage.list_files():
-            path, file = os.path.split(parse.unquote(file.path))
-            if group in path:
-                storage.delete("images/" + group + "/" + file)
-        database.child("Photos").child(group).remove()
-        print("Removed Inactive groups...")
+        end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
+        if end > datetime.datetime.now():
+            print("Group is valid..")
+        else:
+            print("Ĝroup validity Expired ... Housekeeping(daemon) begins...")
+            for file in storage.list_files():
+                path, file = os.path.split(parse.unquote(file.path))
+                if group in path:
+                    storage.delete("images/" + group + "/" + file)
+            database.child("Photos").child(group).remove()
+            print("Removed Inactive groups...")
+    except Exception as ex:
+        logging.info(ex)
+        housekeeper_daemon()
+
 
 
 def stream_group_message(message):

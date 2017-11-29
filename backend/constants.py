@@ -12,3 +12,6 @@ os.environ['STORAGE_BUCKET'] = 'mcc-fall-2017-g12.appspot.com'
 
 # Google Vision
 os.environ['VISION_API_KEY'] = 'AIzaSyBVRD-TNvMAWMlbQd7i9Sb17cQztEVIafc'
+
+#Interval for Inactive groups removal(Time in secs)
+os.environ['HOUSEKEEPING_INTERVAL'] = '5'
