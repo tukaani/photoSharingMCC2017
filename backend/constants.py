@@ -4,11 +4,11 @@ Application constants
 import os
 
 # Firebase
-os.environ['FIREBASE_API_KEY'] = 'AIzaSyAGqgZpYbVbn2SwH1T-RjXQ3zJ0rttOY5I'
+os.environ['FIREBASE_API_KEY'] = 'AIzaSyCcwx6Kfm9g_cp79Ot_TlNp2Vk9BH7imJE'
 os.environ['AUTH_DOMAIN'] = 'fir-functions-test-c85f9.firebaseapp.com'
-os.environ['DATABASE_URL'] = 'https://fir-functions-test-c85f9.firebaseio.com'
-os.environ['PROJECT_ID'] = 'fir-functions-test-c85f9'
-os.environ['STORAGE_BUCKET'] = 'fir-functions-test-c85f9.appspot.com'
+os.environ['DATABASE_URL'] = 'https://mcc-fall-2017-g12.firebaseio.com'
+os.environ['PROJECT_ID'] = 'mcc-fall-2017-g12'
+os.environ['STORAGE_BUCKET'] = 'mcc-fall-2017-g12.appspot.com'
 
 # Google Vision
-os.environ['VISION_API_KEY'] = 'AIzaSyAcSZ3-4igzr60jZzSuRa7tUFHr02c9OPQ'
+os.environ['VISION_API_KEY'] = 'AIzaSyBVRD-TNvMAWMlbQd7i9Sb17cQztEVIafc'
