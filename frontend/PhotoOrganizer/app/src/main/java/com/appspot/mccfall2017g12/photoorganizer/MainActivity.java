@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         if (!PhotoSynchronizer.isListening) {
-            PhotoSynchronizer synchronizer = new PhotoSynchronizer(User.getGroupId(), this);
+            PhotoSynchronizer synchronizer = new PhotoSynchronizer(User.get().getGroupId(), this);
             synchronizer.listen();
             MainActivity.synchronizer = synchronizer;
             PhotoSynchronizer.isListening = true;
@@ -139,16 +139,17 @@ public class MainActivity extends AppCompatActivity {
                     Boolean isBarcode = hasBarcode(photoFile);
 
                     Photo photo = new Photo();
-                    photo.author = User.getUsername();
+                    photo.author = User.get().getUserName();
 
                     if(isBarcode) {
                         photo.albumId = Album.PRIVATE_ALBUM_ID;
                         photo.photoId = UUID.randomUUID().toString();
                     }
                     else {
-                        photo.albumId = User.getGroupId();
+                        String groupId = User.get().getGroupId();
+                        photo.albumId = groupId;
                         DatabaseReference photoRef = mFirebaseDatabase
-                                .getReference("photos").child(User.getGroupId()).push();
+                                .getReference("photos").child(groupId).push();
                         photoRef.child("author").setValue(uid);
                         photo.photoId = photoRef.getKey();
                     }

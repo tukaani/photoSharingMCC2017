@@ -78,21 +78,8 @@ public class LoginActivity extends AppCompatActivity {
                             public void onComplete(@NonNull Task<AuthResult> task) {
                                 if (task.isSuccessful()) {
                                     // Sign in success, update UI with the signed-in user's information
-                                    mDatabase.child("users").child(mAuth.getCurrentUser().getUid()).child("username").addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot) {
-                                            User.setUsername(dataSnapshot.getValue().toString());
-                                            User.setGroupId("a1");
-                                            startActivity(new Intent(LoginActivity.this,MainActivity.class));
-
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-                                            System.out.println("error when retrieving user");
-                                        }
-                                    });
-
+                                    User.set(mAuth.getCurrentUser().getUid());
+                                    startActivity(new Intent(LoginActivity.this,MainActivity.class));
 
                                 } else {
                                     // If sign in fails, display a message to the user.
