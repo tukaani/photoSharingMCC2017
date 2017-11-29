@@ -11,6 +11,8 @@ from urllib import parse
 import pyrebase
 import json
 from PIL import Image
+import time
+import logging
 
 firebase_config = {
     "apiKey": os.environ.get('FIREBASE_API_KEY', None),
@@ -85,7 +87,47 @@ def delete(group_id, user_id):
             group_id).child("members").set(members)
 
 
-def monitor_group_expiration(message):
+def notify_housekeeper_daemon(message):
+    """ Notify housekeeper daemon"""
+    try:
+        logging.info(
+            "First group is created.. closing the housekeeper stream.." + message)
+        housekeeper.close()
+    except Exception as ex:
+        logging.info("Starts housekeeper daemon")
+        housekeeper_daemon()
+
+
+def housekeeper_daemon():
+    """Housekeeper Daemon runs for every 60 seconds"""
+    try:
+        while True:
+            group_ids = database.child("Photos").get()
+            for grp in group_ids.each():
+                batch_delete(group=grp.key())
+            time.sleep(60) #TODO:configure this value sensibily
+    except Exception as ex:
+        pass
+
+
+def batch_delete(group):
+    """ Delete InActive Groups"""
+    end_time = database.child('Photos').child(
+        group).child('end_time').get().val()
+    end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
+    if end > datetime.datetime.now():
+        print("Group is valid..")
+    else:
+        print("Ĝroup validity Expired ... Housekeeping(daemon) begins...")
+        for file in storage.list_files():
+            path, file = os.path.split(parse.unquote(file.path))
+            if group in path:
+                storage.delete("images/" + group + "/" + file)
+        database.child("Photos").child(group).remove()
+        print("Removed Inactive groups...")
+
+
+def stream_group_message(message):
     """
     Monitor the group photo sharing
     """
@@ -100,7 +142,7 @@ def monitor_group_expiration(message):
                 if end > datetime.datetime.now():
                     print("Group is Valid..")
                 else:
-                    print("Expired ... Housekeeping begins...")
+                    print("Expired ... Housekeeping(stream) begins...")
                     for file in storage.list_files():
                         path, file = os.path.split(parse.unquote(file.path))
                         if group in path:
@@ -108,5 +150,6 @@ def monitor_group_expiration(message):
                     database.child("Photos").child(group).remove()
     except Exception as ex:
         pass
+#database.child("Photos").stream(stream_group_message)
 
-database.child("Photos").stream(monitor_group_expiration)
+housekeeper = database.child("Photos").stream(notify_housekeeper_daemon)
