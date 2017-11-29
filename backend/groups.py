@@ -85,16 +85,15 @@ def delete(group_id, user_id):
             group_id).child("members").set(members)
 
 
-def stream_handler(message):
+def monitor_group_expiration(message):
     """
     Monitor the group photo sharing
     """
     try:
         if 'data' in message:
-            if 'group' in message['data']:
-                print(message['data']['group'])
-                end_time = database.child('group').child(
-                    message['data']['group']).child('end_time').get().val()
+            for group in message['data']:
+                end_time = database.child('Photos').child(
+                    group).child('end_time').get().val()
                 end = datetime.datetime.strptime(
                     end_time, "%Y-%m-%d %H:%M:%S.%f")
 
@@ -102,14 +101,12 @@ def stream_handler(message):
                     print("Group is Valid..")
                 else:
                     print("Expired ... Housekeeping begins...")
-                    group_id = message['data']['group']
                     for file in storage.list_files():
                         path, file = os.path.split(parse.unquote(file.path))
-                        if group_id in path:
-                            storage.delete(group_id + "/" + file)
-                    database.child("group").child(group_id).remove()
+                        if group in path:
+                            storage.delete("images/" + group + "/" + file)
+                    database.child("Photos").child(group).remove()
     except Exception as ex:
         pass
 
-
-my_stream = database.child("Photos").stream(stream_handler)
+database.child("Photos").stream(monitor_group_expiration)
