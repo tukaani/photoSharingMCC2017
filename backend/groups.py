@@ -31,15 +31,15 @@ def create(group_name, validity, author):
     """Create a group and directory to store group images"""
     token = str(uuid.uuid4())
     data = {"name": group_name,
-            "author": author,
+            "creator": author,
             "start_time": str(datetime.datetime.now()),
-            "end_time": str(datetime.datetime.now() + datetime.timedelta(hours=validity)),
+            "end_time": str(datetime.datetime.now() + datetime.timedelta(minutes=validity)),
             "token": token,
             "members": [author]}
-    group_id = database.child("group").push(data)
+    group_id = database.child('Photos').push(data)
 
     # Firebase will not allows to create an empty directory
-    storage.child(group_id['name'] + "/.keep").put(".keep")
+    storage.child("images/" + group_id['name'] + "/.keep").put(".keep")
     return group_id['name'], token
 
 
@@ -49,39 +49,39 @@ def update(group_id, user_id):
     data = {"token": token}
 
     # Update one time token
-    database.child("group").child(group_id).update(data)
+    database.child("Photos").child(group_id).update(data)
 
     # Update members
-    members = database.child("group").child(
+    members = database.child("Photos").child(
         group_id).child("members").get().val()
 
     if user_id in members:
         raise Exception("user has already joined the group")
 
     members.append(user_id)
-    database.child("group").child(
+    database.child("Photos").child(
         group_id).child("members").set(members)
     return token
 
 
 def delete(group_id, user_id):
     """Delete a group (if user is an author of the group or remove the user from members list"""
-    author_id = database.child("group").child(
-        group_id).child("author").get().val()
+    author_id = database.child("Photos").child(
+        group_id).child("creator").get().val()
 
     if user_id == author_id:
-        database.child("group").child(
+        database.child("Photos").child(
             group_id).remove()
         # FIXME: storage.list_files() can be optimized by having a metadata table which stores image urls for the group
-        for file in storage.list_files():
-            path, file = os.path.split(parse.unquote(file.path))
+        for f in storage.list_files():
+            path, file = os.path.split(parse.unquote(f.path))
             if group_id in path:
-                storage.delete(group_id + "/" + file)
+                storage.delete("images/" + group_id + "/" + file)
     else:
-        members = database.child("group").child(
+        members = database.child("Photos").child(
             group_id).child("members").get().val()
         members.remove(user_id)
-        database.child("group").child(
+        database.child("Photos").child(
             group_id).child("members").set(members)
 
 
