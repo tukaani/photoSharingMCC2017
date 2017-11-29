@@ -1,7 +1,5 @@
 """
-# Authors: Kalaiarasan Saminathan <kalaiarasan.saminathan@aalto.fi>,
-#          Tuukka Rouhiainen <tuukka.rouhiainen@gmail.com>
-#
+# Contributors : MCC-2017-G12
 # Copyright (c) 2017 Aalto University, Finland
 #                    All rights reserved
 """
@@ -97,7 +95,8 @@ def stream_handler(message):
                 print(message['data']['group'])
                 end_time = database.child('group').child(
                     message['data']['group']).child('end_time').get().val()
-                end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
+                end = datetime.datetime.strptime(
+                    end_time, "%Y-%m-%d %H:%M:%S.%f")
 
                 if end > datetime.datetime.now():
                     print("Group is Valid..")
@@ -111,5 +110,6 @@ def stream_handler(message):
                     database.child("group").child(group_id).remove()
     except Exception as ex:
         pass
+
 
 my_stream = database.child("Photos").stream(stream_handler)
