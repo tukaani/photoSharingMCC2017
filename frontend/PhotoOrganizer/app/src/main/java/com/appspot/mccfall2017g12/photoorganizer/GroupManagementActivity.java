@@ -9,11 +9,19 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.zxing.Result;
+
+import me.dm7.barcodescanner.zxing.ZXingScannerView;
+
 /**
  * Created by Ilkka on 27.11.2017.
  */
 
-public class GroupManagementActivity extends Activity {
+public class GroupManagementActivity extends Activity implements ZXingScannerView.ResultHandler {
+
+    private ZXingScannerView zXingScannerView;
+
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_management);
@@ -36,6 +44,7 @@ public class GroupManagementActivity extends Activity {
                 new MenuItem(R.string.leavegroup, R.drawable.ic_person_black_24dp) {
                     @Override
                     public void launch(Context context) {
+                        read();
                         Toast.makeText(context, "Going solo", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -51,5 +60,24 @@ public class GroupManagementActivity extends Activity {
                 menuItem.launch(GroupManagementActivity.this);
             }
         });
+    }
+
+
+    void read(){
+        zXingScannerView = new ZXingScannerView(getApplicationContext());
+        setContentView(zXingScannerView);
+        zXingScannerView.setResultHandler(this);
+        zXingScannerView.startCamera();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        zXingScannerView.stopCamera();
+    }
+
+    @Override
+    public void handleResult(Result result) {
+        zXingScannerView.resumeCameraPreview(this);
     }
 }
