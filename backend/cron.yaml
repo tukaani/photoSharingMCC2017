@@ -1,0 +1,4 @@
+cron:
+- description: "remove expired groups"
+  url: /photoorganizer/housekeeping
+  schedule: every 1 mins

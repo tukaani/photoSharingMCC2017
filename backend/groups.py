@@ -87,40 +87,24 @@ def delete(group_id, user_id):
             group_id).child("members").set(members)
 
 
-def notify_housekeeper_daemon(message):
-    """ Notify housekeeper daemon"""
+def housekeeper_cron():
+    """Housekeeper cron Job Google app engine triggers for every 60 seconds"""
     try:
-        logging.info(
-            "First group is created.. closing the housekeeper stream.." + message)
-        housekeeper.close()
-    except Exception as ex:
-        logging.info("Starts housekeeper daemon")
-        housekeeper_daemon()
-
-
-def housekeeper_daemon():
-    """Housekeeper Daemon runs for every 60 seconds"""
-    try:
-        while True:
-            group_ids = database.child("Photos").get()
-            for grp in group_ids.each():
-                batch_delete(group=grp.key())
-            time.sleep(int(os.environ.get('HOUSEKEEPING_INTERVAL',60)))
+        group_ids = database.child("Photos").get()
+        for grp in group_ids.each():
+            batch_delete(group=grp.key())
     except Exception as ex:
         logging.info(ex)
-        housekeeper_daemon()
-
 
 def batch_delete(group):
     """ Delete InActive Groups"""
     try:
-        end_time = database.child('Photos').child(
-        group).child('end_time').get().val()
+        end_time = database.child('Photos').child(group).child('end_time').get().val()
         end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
         if end > datetime.datetime.now():
-            print("Group is valid..")
+            print(group + " Group is valid..")
         else:
-            print("Ĝroup validity Expired ... Housekeeping(daemon) begins...")
+            print(group + " Ĝroup validity Expired ... Housekeeping(daemon) begins...")
             for file in storage.list_files():
                 path, file = os.path.split(parse.unquote(file.path))
                 if group in path:
@@ -129,8 +113,6 @@ def batch_delete(group):
             print("Removed Inactive groups...")
     except Exception as ex:
         logging.info(ex)
-        housekeeper_daemon()
-
 
 
 def stream_group_message(message):
@@ -157,5 +139,3 @@ def stream_group_message(message):
     except Exception as ex:
         pass
 #database.child("Photos").stream(stream_group_message)
-
-housekeeper = database.child("Photos").stream(notify_housekeeper_daemon)

@@ -199,5 +199,14 @@ def server_error_403(error):
     })
 
 
+@app.route('/photoorganizer/housekeeping', methods=['GET', 'POST'])
+def housekeeping():
+    """ google cron(housekeeping)"""
+    try:
+        groups.housekeeper_cron()
+        return jsonify({'status': "success"})
+    except Exception as ex:
+        logging.info(ex)
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
