@@ -83,6 +83,8 @@ public class LoginActivity extends AppCompatActivity {
                                         public void onDataChange(DataSnapshot dataSnapshot) {
                                             User.setUsername(dataSnapshot.getValue().toString());
                                             User.setGroupId("a1");
+                                            System.out.println("error LOGIIIn");
+
                                             startActivity(new Intent(LoginActivity.this,MainActivity.class));
 
                                         }

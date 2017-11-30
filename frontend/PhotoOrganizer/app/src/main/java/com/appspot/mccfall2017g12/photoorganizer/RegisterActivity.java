@@ -44,34 +44,41 @@ public class RegisterActivity extends AppCompatActivity {
         mSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                System.out.println("AAA");
 
-                if(mPassword.getText().toString().equals(mPasswordConfirm.getText().toString()) && mEmail.getText()!= null ){
-                    System.out.println("HOLA");
+                if(mPassword.getText().toString().length()>5) {
 
-                    mAuth.createUserWithEmailAndPassword(mEmail.getText().toString(), mPassword.getText().toString())
-                            .addOnCompleteListener(RegisterActivity.this, new OnCompleteListener<AuthResult>() {
-                                @Override
-                                public void onComplete(@NonNull Task<AuthResult> task) {
-                                    if (task.isSuccessful()) {
-                                        // Sign in success, update UI with the signed-in user's information
-                                        System.out.println("created");
-                                        Log.d(TAG, "createUserWithEmail:success");
-                                        FirebaseUser user = mAuth.getCurrentUser();
-                                        mDatabase.child("users").child(user.getUid()).child("username").setValue(mUsername.getText().toString());
-                                        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                                        startActivity(intent);
+                    if (mPassword.getText().toString().equals(mPasswordConfirm.getText().toString()) && mEmail.getText() != null) {
 
-                                    } else {
-                                        // If sign in fails, display a message to the user.
-                                        Log.w(TAG, "createUserWithEmail:failure", task.getException());
+                        mAuth.createUserWithEmailAndPassword(mEmail.getText().toString(), mPassword.getText().toString())
+                                .addOnCompleteListener(RegisterActivity.this, new OnCompleteListener<AuthResult>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<AuthResult> task) {
+                                        if (task.isSuccessful()) {
+                                            // Sign in success, update UI with the signed-in user's information
+                                            System.out.println("created");
+                                            Log.d(TAG, "createUserWithEmail:success");
+                                            FirebaseUser user = mAuth.getCurrentUser();
+                                            mDatabase.child("users").child(user.getUid()).child("username").setValue(mUsername.getText().toString());
+                                            User.setUsername(mUsername.getText().toString());
+                                            User.setGroupId("a1");
+                                            Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                                            startActivity(intent);
+
+                                        } else {
+                                            // If sign in fails, display a message to the user.
+                                            Log.w(TAG, "createUserWithEmail:failure", task.getException());
+
+                                        }
+
 
                                     }
+                                });
 
+                    }
+                }
+                else{
 
-                                }
-                            });
-
+                    Toast.makeText(RegisterActivity.this,"Password lenght must have more than 5 characters", Toast.LENGTH_LONG).show();
                 }
             }
         });
