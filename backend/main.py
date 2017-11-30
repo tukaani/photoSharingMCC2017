@@ -166,7 +166,7 @@ def login():
     try:
         email = request.form['email']
         input_password = request.form['password']
-        users.get_user_by_email(email_id=email)
+        #users.get_user_by_email(email_id=email)
         session.clear()
         session["user"] = email
         return render_template("filemanager/dashboard.html")
