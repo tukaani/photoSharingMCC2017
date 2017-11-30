@@ -1,6 +1,7 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -77,7 +78,13 @@ public class RegisterActivity extends AppCompatActivity {
                     }
                 }
                 else{
-
+                    mPassword.setText("");
+                    mPassword.setHint("Password");
+                    mPassword.setHintTextColor(Color.RED);
+                    mPassword.requestFocus();
+                    mPasswordConfirm.setText("");
+                    mPasswordConfirm.setHint("Repeat password");
+                    mPasswordConfirm.setHintTextColor(Color.RED);
                     Toast.makeText(RegisterActivity.this,"Password lenght must have more than 5 characters", Toast.LENGTH_LONG).show();
                 }
             }
