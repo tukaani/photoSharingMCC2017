@@ -13,7 +13,7 @@ from flask import render_template
 import detect_image
 import groups
 import users
-from request_validators import is_authorized_user, validate_authorization_header
+from request_validators import is_authorized_user, validate_authorization_header, validate_group_create_request, validate_group_join_request, validate_group_delete_request
 
 app = Flask(__name__)
 app.secret_key = 'F12Zr47j3yX R~X@lH!jmM]Lwf/,?KT'
@@ -46,6 +46,7 @@ def create_group():
         is_authorized_user(request.headers['Authorization'])
 
         content = request.get_json()
+        validate_group_create_request(content=content)
         author = content['author']
         group_name = content['group_name']
         valid_hours = content['validity']
@@ -68,6 +69,7 @@ def join_group():
         is_authorized_user(request.headers['Authorization'])
 
         content = request.get_json()
+        validate_group_join_request(content=content)
         group_id = content['group_id']
         user_id = content['user_id']
         token = content['token']
@@ -89,6 +91,7 @@ def delete_group():
         is_authorized_user(request.headers['Authorization'])
 
         content = request.get_json()
+        validate_group_delete_request(content=content)
         group_id = content['group_id']
         user_id = content['user_id']
         groups.delete(group_id=group_id, user_id=user_id)
