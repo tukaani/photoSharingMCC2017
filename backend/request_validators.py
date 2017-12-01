@@ -8,7 +8,10 @@ import users
 
 def validate_authorization_header(headers):
     """Check the exixtence of Authorization Header"""
-    if 'Authorization' not in headers:
+    if headers is not None:
+        if 'Authorization' not in headers:
+            raise Exception("Invalid Request")
+    else:
         raise Exception("Invalid Request")
 
 
@@ -58,4 +61,3 @@ def validate_group_delete_request(content):
             raise Exception("User information is missing")
     else:
         raise Exception("Invalid Request")
-        
