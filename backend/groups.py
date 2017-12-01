@@ -45,12 +45,17 @@ def create(group_name, validity, author):
     return group_id['name'], token
 
 
-def update(group_id, user_id):
+def update(group_id, user_id, token):
     """Add an user to the group"""
     token = str(uuid.uuid4())
     data = {"token": token}
 
-    # Update one time token
+    active_token = database.child("Photos").child(
+        group_id).child("token").get().val()
+    if token != active_token:
+        raise Exception("Invalid one time token")
+
+        # Update one time token
     database.child("Photos").child(group_id).update(data)
 
     # Update members
@@ -96,10 +101,12 @@ def housekeeper_cron():
     except Exception as ex:
         logging.info(ex)
 
+
 def batch_delete(group):
     """ Delete InActive Groups"""
     try:
-        end_time = database.child('Photos').child(group).child('end_time').get().val()
+        end_time = database.child('Photos').child(
+            group).child('end_time').get().val()
         end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
         if end > datetime.datetime.now():
             print(group + " Group is valid..")
@@ -138,4 +145,4 @@ def stream_group_message(message):
                     database.child("Photos").child(group).remove()
     except Exception as ex:
         pass
-#database.child("Photos").stream(stream_group_message)
+# database.child("Photos").stream(stream_group_message)

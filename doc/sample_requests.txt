@@ -1,6 +1,6 @@
 Group Management
 
-Create 
+Create
 http://0.0.0.0:8080/photoorganizer/api/v1.0/group/create
 
 Request:
@@ -29,8 +29,10 @@ Authorization: ****(Firebase Auth token)
 
 Body
 {
-	"group_id": "-KzsLXYuvHIAH-5qoJjq",
+	"group_id": "-L-Iub9ZDbz8QHjibr1R",
+	"token": "487589ba-6837-4723-8ea6-25d99b8474d6",
 	"user_id":"skalai1"
+  
 }
 Response:
 {

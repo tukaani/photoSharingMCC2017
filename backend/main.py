@@ -70,7 +70,8 @@ def join_group():
         content = request.get_json()
         group_id = content['group_id']
         user_id = content['user_id']
-        token = groups.update(group_id=group_id, user_id=user_id)
+        token = content['token']
+        token = groups.update(group_id=group_id, user_id=user_id, token=token)
         return jsonify({'refreshedtoken': token})
     except Exception as ex:
         logging.exception(ex)
@@ -166,7 +167,7 @@ def login():
     try:
         email = request.form['email']
         input_password = request.form['password']
-        #users.get_user_by_email(email_id=email)
+        # users.get_user_by_email(email_id=email)
         session.clear()
         session["user"] = email
         return render_template("filemanager/dashboard.html")
@@ -207,6 +208,7 @@ def housekeeping():
         return jsonify({'status': "success"})
     except Exception as ex:
         logging.info(ex)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
