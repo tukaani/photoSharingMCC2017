@@ -121,6 +121,17 @@ def batch_delete(group):
     except Exception as ex:
         logging.info(ex)
 
+def authenticate_group_member(email_id,password):
+    """Authenticate Enduser by email"""
+    user = auth.sign_in_with_email_and_password(
+        email=email_id, password=password)
+    if 'idToken' in user:
+        if user['idToken'] is not None:
+            return True
+        else:
+            return False
+    else:
+        raise Exception("Current user is not part of any group")
 
 def stream_group_message(message):
     """

@@ -61,7 +61,7 @@ def create_group():
     })
 
 
-@app.route('/photoorganizer/api/v1.0/group/join', methods=['GET', 'POST'])
+@app.route('/photoorganizer/api/v1.0/group/join', methods=['POST'])
 def join_group():
     """ Allow members to join a group """
     try:
@@ -83,7 +83,7 @@ def join_group():
     })
 
 
-@app.route('/photoorganizer/api/v1.0/group/delete', methods=['GET', 'POST'])
+@app.route('/photoorganizer/api/v1.0/group/delete', methods=['POST'])
 def delete_group():
     """" Delete the group and images """
     try:
@@ -126,7 +126,7 @@ def process_image_v1():
     })
 
 
-@app.route('/photoorganizer/api/v2.0/process', methods=['GET', 'POST'])
+@app.route('/photoorganizer/api/v2.0/process', methods=['POST'])
 def process_image_v2():
     """Read the base64 encoded image from request info and respond with base64 encoded"""
     try:
@@ -169,8 +169,8 @@ def login():
     """Initiate user session"""
     try:
         email = request.form['email']
-        input_password = request.form['password']
-        # users.get_user_by_email(email_id=email)
+        password = request.form['password']
+        groups.authenticate_group_member(email_id=email,password=password)
         session.clear()
         session["user"] = email
         return render_template("filemanager/dashboard.html")
