@@ -166,16 +166,15 @@ def get_group_id(user_id):
     return database.child("Users").child(user_id).child("group").get().val()
 
 
-def retrieve_user_photos(group_id, token):
+def retrieve_user_photos(group_id):
     """ Retrive group photos"""
-    urls = []
+    files = []
     for file in storage.list_files():
         path, file = os.path.split(parse.unquote(file.path))
         if group_id in path:
-            data = storage.child("images/" + group_id +
-                                 "/" + file).get_url(token=token)
-            urls.append(data)
-    print(urls)
+            files.append(file)
+    return files
+
 
 def stream_group_message(message):
     """

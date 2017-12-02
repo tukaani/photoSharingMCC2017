@@ -175,14 +175,14 @@ def login():
             email_id=email, password=password)
         user_id = users.get_user_by_email(email_id=email)
         group_id = groups.get_group_id(user_id=user_id)
-        #hard cdded group_id
+        # hard cdded group_id
         group_id = "-L-Ma6j5ZeaKCpvfnQOI"
         session.clear()
         session["user"] = email
-        print(token)
-        print(group_id)
-        urls = groups.retrieve_user_photos(group_id=group_id,token=token)
-        return render_template("filemanager/dashboard.html")
+        file_names = groups.retrieve_user_photos(group_id=group_id)
+        urls = users.get_download_urls(files=file_names, group_name=group_id)
+        print(urls)
+        return render_template("filemanager/dashboard.html", files=urls)
     except Exception as e:
         logging.exception(e)
     return render_template("filemanager/failure.html")
