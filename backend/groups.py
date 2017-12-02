@@ -154,13 +154,28 @@ def authenticate_group_member(email_id, password):
     user = auth.sign_in_with_email_and_password(
         email=email_id, password=password)
     if 'idToken' in user:
-        if user['idToken'] is not None:
-            return True
-        else:
-            return False
+        if user['idToken'] is None:
+            raise Exception("invalid user idToken")
     else:
         raise Exception("Current user is not part of any group")
+    return user['idToken']
 
+
+def get_group_id(user_id):
+    """ Retrieve group_id from user_id"""
+    return database.child("Users").child(user_id).child("group").get().val()
+
+
+def retrieve_user_photos(group_id, token):
+    """ Retrive group photos"""
+    urls = []
+    for file in storage.list_files():
+        path, file = os.path.split(parse.unquote(file.path))
+        if group_id in path:
+            data = storage.child("images/" + group_id +
+                                 "/" + file).get_url(token=token)
+            urls.append(data)
+    print(urls)
 
 def stream_group_message(message):
     """

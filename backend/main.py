@@ -171,9 +171,17 @@ def login():
     try:
         email = request.form['email']
         password = request.form['password']
-        groups.authenticate_group_member(email_id=email, password=password)
+        token = groups.authenticate_group_member(
+            email_id=email, password=password)
+        user_id = users.get_user_by_email(email_id=email)
+        group_id = groups.get_group_id(user_id=user_id)
+        #hard cdded group_id
+        group_id = "-L-Ma6j5ZeaKCpvfnQOI"
         session.clear()
         session["user"] = email
+        print(token)
+        print(group_id)
+        urls = groups.retrieve_user_photos(group_id=group_id,token=token)
         return render_template("filemanager/dashboard.html")
     except Exception as e:
         logging.exception(e)

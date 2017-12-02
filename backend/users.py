@@ -23,4 +23,4 @@ def authenticate_user(id_token):
 def get_user_by_email(email_id):
     """ Retrieve user info by email """
     user = auth.get_user_by_email(email=email_id)
-    return user
+    return user.uid
