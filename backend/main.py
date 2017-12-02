@@ -73,7 +73,8 @@ def join_group():
         group_id = content['group_id']
         user_id = content['user_id']
         token = content['token']
-        token = groups.update(group_id=group_id, user_id=user_id, token=token)
+        token = groups.update(
+            group_id=group_id, user_id=user_id, user_token=token)
         return jsonify({'refreshedtoken': token})
     except Exception as ex:
         logging.exception(ex)
@@ -170,7 +171,7 @@ def login():
     try:
         email = request.form['email']
         password = request.form['password']
-        groups.authenticate_group_member(email_id=email,password=password)
+        groups.authenticate_group_member(email_id=email, password=password)
         session.clear()
         session["user"] = email
         return render_template("filemanager/dashboard.html")

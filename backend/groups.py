@@ -31,6 +31,7 @@ storage = firebase.storage()
 
 def create(group_name, validity, author):
     """Create a group and directory to store group images"""
+
     token = str(uuid.uuid4())
     data = {"name": group_name,
             "creator": author,
@@ -38,24 +39,51 @@ def create(group_name, validity, author):
             "end_time": str(datetime.datetime.now() + datetime.timedelta(minutes=validity)),
             "token": token,
             "members": [author]}
-    group_id = database.child('Photos').push(data)
 
+    # check whether the user is part of any active group
+    user_group = database.child("Users").child(author).child(
+        "group").get().val()
+    if user_group is not None:
+        end_time = database.child('Photos').child(
+            user_group).child('end_time').get().val()
+        end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
+        if end > datetime.datetime.now():
+            raise Exception(
+                "user is part of another active group and not allowed to create a new group")
+    group_id = database.child('Photos').push(data)
+    # Add group information to the user collection
+    database.child("Users").child(author).child("group").set(group_id['name'])
     # Firebase will not allows to create an empty directory
     storage.child("images/" + group_id['name'] + "/.keep").put(".keep")
     return group_id['name'], token
 
 
-def update(group_id, user_id, token):
+def update(group_id, user_id, user_token):
     """Add an user to the group"""
     token = str(uuid.uuid4())
     data = {"token": token}
 
     active_token = database.child("Photos").child(
         group_id).child("token").get().val()
-    if token != active_token:
+    if user_token != active_token:
         raise Exception("Invalid one time token")
 
-        # Update one time token
+    # check whether the user is part of any active group
+    user_group = database.child("Users").child(user_id).child(
+        "group").get().val()
+    if user_group is not None:
+        end_time = database.child('Photos').child(
+            user_group).child('end_time').get().val()
+        end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
+        if end > datetime.datetime.now():
+            raise Exception(
+                "user is part of another active group and not allowed to join this group")
+        else:
+            database.child("Users").child(
+                user_id).child("group").update(group_id)
+    database.child("Users").child(user_id).child("group").set(group_id)
+
+    # Update one time token
     database.child("Photos").child(group_id).update(data)
 
     # Update members
@@ -79,7 +107,6 @@ def delete(group_id, user_id):
     if user_id == author_id:
         database.child("Photos").child(
             group_id).remove()
-        # FIXME: storage.list_files() can be optimized by having a metadata table which stores image urls for the group
         for f in storage.list_files():
             path, file = os.path.split(parse.unquote(f.path))
             if group_id in path:
@@ -121,7 +148,8 @@ def batch_delete(group):
     except Exception as ex:
         logging.info(ex)
 
-def authenticate_group_member(email_id,password):
+
+def authenticate_group_member(email_id, password):
     """Authenticate Enduser by email"""
     user = auth.sign_in_with_email_and_password(
         email=email_id, password=password)
@@ -132,6 +160,7 @@ def authenticate_group_member(email_id,password):
             return False
     else:
         raise Exception("Current user is not part of any group")
+
 
 def stream_group_message(message):
     """

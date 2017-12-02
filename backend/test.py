@@ -21,7 +21,11 @@ firebase_config = {
 firebase = pyrebase.initialize_app(firebase_config)
 
 db = firebase.database()
-data = {"name": "Mortimer 'Morty' Smith"}
-db.child("users").push(data)
-
-print(uuid.uuid4())
+data = {"username": "testuser3"}
+user = db.child("Users").push(data)
+# print(uuid.uuid4())
+print(user['name'])
+# user_group_id = db.child("Users").child(
+#     "-L-LvCl1-7atu1x2giCh").child("group_id").get().val()
+# if user_group_id is not "" and None:
+#     print(user_group_id)
