@@ -9,7 +9,9 @@ Content-Type: application/json
 Authorization: ****(Firebase Auth token)
 
 Body:
-{'group_name': 'mm_1', 'validity': 1, 'author': '_dgrg_134'}
+{"group_name": "mm_1", 
+"validity": 1, 
+"author": "dgrg_134"}
 
 Response:
 {
