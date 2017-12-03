@@ -176,6 +176,24 @@ def retrieve_user_photos(group_id):
     return files
 
 
+def get_download_url(group_id, user_token):
+    """ Get Firebase Download URL"""
+    # shit load crappy operations performed here. think about restructure the scehma.
+    urls = []
+    for file in storage.list_files():
+        path, file_name = os.path.split(parse.unquote(file.path))
+        if group_id in path:
+            storage.child("images/" + group_id + "/" +
+                          file_name).download("temp/" + file_name)
+            storage.delete("images/" + group_id + "/" + file_name)
+            data = storage.child("images/" + group_id + "/" +
+                                 file_name).put("temp/" + file_name, token=user_token)
+            download_url = storage.child(
+                "images/" + group_id + "/" + file_name).get_url(token=data['downloadTokens'])
+            urls.append(download_url)
+    return urls
+
+
 def stream_group_message(message):
     """
     Monitor the group photo sharing

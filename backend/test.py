@@ -7,7 +7,7 @@ import os
 import uuid
 import constants
 from pyrebase import pyrebase
-
+import groups
 firebase_config = {
     "apiKey": os.environ.get('FIREBASE_API_KEY', None),
     "authDomain": os.environ.get('AUTH_DOMAIN', None),

@@ -175,13 +175,11 @@ def login():
             email_id=email, password=password)
         user_id = users.get_user_by_email(email_id=email)
         group_id = groups.get_group_id(user_id=user_id)
-        # hard cdded group_id
-        group_id = "-L-Ma6j5ZeaKCpvfnQOI"
+        group_id = "group1"  # hardcoded for testing purpose
         session.clear()
         session["user"] = email
-        file_names = groups.retrieve_user_photos(group_id=group_id)
-        urls = users.get_download_urls(files=file_names, group_name=group_id)
-        print(urls)
+        session["group"] = group_id
+        urls = groups.get_download_url(group_id=group_id, user_token=token)
         return render_template("filemanager/dashboard.html", files=urls)
     except Exception as e:
         logging.exception(e)
