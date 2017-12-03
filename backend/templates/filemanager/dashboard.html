@@ -70,8 +70,9 @@
             url: "{{url_for('delete')}}",
             contentType: 'application/json;charset=UTF-8',
             data: { 'data': filename }
+        }).done(function (data) {
+            window.location.reload(true);
         });
-        window.location.reload(true);
     });
 </script>
 <style>
