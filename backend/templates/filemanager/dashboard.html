@@ -47,7 +47,8 @@
         {% for file in files%}
         <div class="col-lg-3 col-md-4 col-xs-6">
             <a href="#" class="d-block mb-4 h-100">
-                <img class="img-fluid img-thumbnail" src="{{file.url}}" name={{file.name}} alt="">
+                <img class="img-fluid img-thumbnail" src="{{file.url}}" name="{{file.name}}" alt="">
+                <p>{{file.name}}</p>
             </a>
         </div>
         {% endfor %}
@@ -59,11 +60,13 @@
         e.preventDefault();
         var id = $(this).closest('tr').data('id');
         $('#myModal').data('id', id).modal('show');
+        console.log($(this).attr('name'))
         $('#filename').text($(this).attr('name'))
     });
 
     $('#btnDelteYes').click(function () {
         var filename = $('#filename').text()
+        console.log(filename)
         $('#myModal').modal('hide');
         $.ajax({
             type: 'POST',
