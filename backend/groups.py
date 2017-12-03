@@ -190,9 +190,17 @@ def get_download_url(group_id, user_token):
                                  file_name).put("temp/" + file_name, token=user_token)
             download_url = storage.child(
                 "images/" + group_id + "/" + file_name).get_url(token=data['downloadTokens'])
-            urls.append(download_url)
+            # urls.append(download_url)
+            url = {}
+            url['url'] = download_url
+            url['name'] = file_name
+            urls.append(url)
     return urls
 
+
+def delete_specific_file(group_id, file_name):
+    """Delete a specific file from storage"""
+    storage.delete("images/" + group_id + "/" + file_name)
 
 def stream_group_message(message):
     """
