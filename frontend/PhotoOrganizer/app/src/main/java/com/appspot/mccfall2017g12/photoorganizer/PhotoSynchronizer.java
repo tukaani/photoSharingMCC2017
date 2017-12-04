@@ -37,9 +37,6 @@ import java.util.concurrent.Executor;
 
 public class PhotoSynchronizer {
 
-    //TODO hack, must be changed!
-    public volatile static boolean isListening = false;
-
     //TODO Should be calculated based on network state & settings
     private final static String CURRENT_RESOLUTION_LEVEL = ResolutionTools.LEVEL_FULL;
 
@@ -50,6 +47,8 @@ public class PhotoSynchronizer {
     private final Executor executor;
     private final FirebaseDatabase firebaseDatabase;
     private final FirebaseStorage firebaseStorage;
+    private final PhotoEventListener photoEventListener;
+    private final DatabaseReference groupReference;
 
     public PhotoSynchronizer(String groupId, Context context) {
         this.groupId = groupId;
@@ -59,11 +58,20 @@ public class PhotoSynchronizer {
         this.mainHandler = new Handler(Looper.getMainLooper());
         this.firebaseDatabase = FirebaseDatabase.getInstance();
         this.firebaseStorage = FirebaseStorage.getInstance();
+        this.photoEventListener = new PhotoEventListener();
+        this.groupReference = this.firebaseDatabase.getReference("photos").child(groupId);
+    }
+
+    public interface Factory {
+        PhotoSynchronizer create(String groupId);
     }
 
     public void listen() {
-        firebaseDatabase.getReference("photos").child(groupId)
-                .addChildEventListener(new PhotoEventListener());
+        groupReference.addChildEventListener(photoEventListener);
+    }
+
+    public void stop() {
+        groupReference.removeEventListener(photoEventListener);
     }
 
     public void uploadPhoto(final String photoId) {
@@ -211,8 +219,8 @@ public class PhotoSynchronizer {
                 });
             }
             if (dataSnapshot.hasChild("people")) {
-                final int people = dataSnapshot.child("people").getValue(int.class);
-                database.galleryDao().updatePhotoPeople(photoId, people);
+                final boolean people = dataSnapshot.child("people").getValue(boolean.class);
+                database.galleryDao().updatePhotoPeople(photoId, people ? 1 : 0);
             }
         }
 
