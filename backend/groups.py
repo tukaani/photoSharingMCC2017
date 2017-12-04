@@ -103,7 +103,7 @@ def delete(group_id, user_id):
     """Delete a group (if user is an author of the group or remove the user from members list"""
     author_id = database.child("Photos").child(
         group_id).child("creator").get().val()
-
+    database.child("Users").child(user_id).child("group").remove()
     if user_id == author_id:
         database.child("Photos").child(
             group_id).remove()
@@ -117,7 +117,6 @@ def delete(group_id, user_id):
         members.remove(user_id)
         database.child("Photos").child(
             group_id).child("members").set(members)
-
 
 def housekeeper_cron():
     """Housekeeper cron Job Google app engine triggers for every 60 seconds"""
