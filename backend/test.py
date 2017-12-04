@@ -1,7 +1,5 @@
 """"#
-# Authors: Kalaiarasan Saminathan <kalaiarasan.saminathan@aalto.fi>,
-#          Tuukka Rouhiainen <tuukka.rouhiainen@gmail.com>
-#
+# Contributors : MCC-2017-G12
 # Copyright (c) 2017 Aalto University, Finland
 #                    All rights reserved
 """
@@ -9,7 +7,7 @@ import os
 import uuid
 import constants
 from pyrebase import pyrebase
-
+import groups
 firebase_config = {
     "apiKey": os.environ.get('FIREBASE_API_KEY', None),
     "authDomain": os.environ.get('AUTH_DOMAIN', None),
@@ -23,7 +21,11 @@ firebase_config = {
 firebase = pyrebase.initialize_app(firebase_config)
 
 db = firebase.database()
-data = {"name": "Mortimer 'Morty' Smith"}
-db.child("users").push(data)
-
-print(uuid.uuid4())
+data = {"username": "testuser3"}
+user = db.child("Users").push(data)
+# print(uuid.uuid4())
+print(user['name'])
+# user_group_id = db.child("Users").child(
+#     "-L-LvCl1-7atu1x2giCh").child("group_id").get().val()
+# if user_group_id is not "" and None:
+#     print(user_group_id)

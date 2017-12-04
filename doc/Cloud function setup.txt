@@ -1,0 +1,8 @@
+Cloud functions deployment:
+	- Required: nodejs & npm
+	- npm install -g firebase-tools
+	- firebase login
+	- firebase deploy
+
+	NOTE 1: You might need to add more memory to the createResolutions function if big pictures are uploaded
+	NOTE 2: In the console is a bug that if you deploy cloud functions and don't refresh the settings page for the cloud functions it will load the previous deployment!!

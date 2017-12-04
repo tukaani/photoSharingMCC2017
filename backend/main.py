@@ -1,7 +1,5 @@
 """"#
-# Authors: Kalaiarasan Saminathan <kalaiarasan.saminathan@aalto.fi>,
-#          Tuukka Rouhiainen <tuukka.rouhiainen@gmail.com>
-#
+# Contributors : MCC-2017-G12
 # Copyright (c) 2017 Aalto University, Finland
 #                    All rights reserved
 """
@@ -15,7 +13,8 @@ from flask import render_template
 import detect_image
 import groups
 import users
-from request_validators import is_authorized_user, validate_authorization_header
+from request_validators import is_authorized_user, validate_authorization_header, validate_group_create_request, validate_group_join_request, validate_group_delete_request
+import json
 
 app = Flask(__name__)
 app.secret_key = 'F12Zr47j3yX R~X@lH!jmM]Lwf/,?KT'
@@ -48,6 +47,7 @@ def create_group():
         is_authorized_user(request.headers['Authorization'])
 
         content = request.get_json()
+        validate_group_create_request(content=content)
         author = content['author']
         group_name = content['group_name']
         valid_hours = content['validity']
@@ -62,7 +62,7 @@ def create_group():
     })
 
 
-@app.route('/photoorganizer/api/v1.0/group/join', methods=['GET', 'POST'])
+@app.route('/photoorganizer/api/v1.0/group/join', methods=['POST'])
 def join_group():
     """ Allow members to join a group """
     try:
@@ -70,9 +70,12 @@ def join_group():
         is_authorized_user(request.headers['Authorization'])
 
         content = request.get_json()
+        validate_group_join_request(content=content)
         group_id = content['group_id']
         user_id = content['user_id']
-        token = groups.update(group_id=group_id, user_id=user_id)
+        token = content['token']
+        token = groups.update(
+            group_id=group_id, user_id=user_id, user_token=token)
         return jsonify({'refreshedtoken': token})
     except Exception as ex:
         logging.exception(ex)
@@ -82,7 +85,7 @@ def join_group():
     })
 
 
-@app.route('/photoorganizer/api/v1.0/group/delete', methods=['GET', 'POST'])
+@app.route('/photoorganizer/api/v1.0/group/delete', methods=['POST'])
 def delete_group():
     """" Delete the group and images """
     try:
@@ -90,6 +93,7 @@ def delete_group():
         is_authorized_user(request.headers['Authorization'])
 
         content = request.get_json()
+        validate_group_delete_request(content=content)
         group_id = content['group_id']
         user_id = content['user_id']
         groups.delete(group_id=group_id, user_id=user_id)
@@ -124,7 +128,7 @@ def process_image_v1():
     })
 
 
-@app.route('/photoorganizer/api/v2.0/process', methods=['GET', 'POST'])
+@app.route('/photoorganizer/api/v2.0/process', methods=['POST'])
 def process_image_v2():
     """Read the base64 encoded image from request info and respond with base64 encoded"""
     try:
@@ -167,11 +171,18 @@ def login():
     """Initiate user session"""
     try:
         email = request.form['email']
-        input_password = request.form['password']
-        users.get_user_by_email(email_id=email)
+        password = request.form['password']
+        token = groups.authenticate_group_member(
+            email_id=email, password=password)
+        user_id = users.get_user_by_email(email_id=email)
+        group_id = groups.get_group_id(user_id=user_id)
+        #group_id = "group1"  # hardcoded for testing purpose
         session.clear()
         session["user"] = email
-        return render_template("filemanager/dashboard.html")
+        session["group"] = group_id
+        session['token'] = token
+        urls = groups.get_download_url(group_id=group_id, user_token=token)
+        return render_template("filemanager/dashboard.html", files=urls)
     except Exception as e:
         logging.exception(e)
     return render_template("filemanager/failure.html")
@@ -183,6 +194,15 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
+
+@app.route('/delete', methods=['POST'])
+def delete():
+    """ Delete file from firebase storage"""
+    info = request.data.decode('utf-8')
+    data = info.split("=")
+    groups.delete_specific_file(group_id=session["group"], file_name=data[1])
+    urls = groups.get_download_url(group_id=session["group"], user_token=session["token"])
+    return render_template("filemanager/dashboard.html", files=urls)
 
 @app.errorhandler(500)
 def server_error_500(error):
@@ -199,6 +219,16 @@ def server_error_403(error):
         'status': http.HTTPStatus.FORBIDDEN,
         'error': "access forbidden"
     })
+
+
+@app.route('/photoorganizer/housekeeping', methods=['GET', 'POST'])
+def housekeeping():
+    """ google cron(housekeeping)"""
+    try:
+        groups.housekeeper_cron()
+        return jsonify({'status': "success"})
+    except Exception as ex:
+        logging.info(ex)
 
 
 if __name__ == '__main__':

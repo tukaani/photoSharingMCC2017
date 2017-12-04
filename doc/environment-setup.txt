@@ -1,0 +1,12 @@
+1. Install python3
+   (https://www.python.org/downloads/)
+
+2.virtualenv -p python3 <virtual enviroment_name 
+
+    (virtualenv -p python3 mcc_env)
+
+3. source mcc_env/bin/activate
+
+4. pip install -r requirements.txt
+
+5. python main.py

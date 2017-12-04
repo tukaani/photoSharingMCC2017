@@ -1,7 +1,5 @@
 """
-# Authors: Kalaiarasan Saminathan <kalaiarasan.saminathan@aalto.fi>,
-#          Tuukka Rouhiainen <tuukka.rouhiainen@gmail.com>
-#
+# Contributors : MCC-2017-G12
 # Copyright (c) 2017 Aalto University, Finland
 #                    All rights reserved
 """
@@ -13,6 +11,8 @@ from urllib import parse
 import pyrebase
 import json
 from PIL import Image
+import time
+import logging
 
 firebase_config = {
     "apiKey": os.environ.get('FIREBASE_API_KEY', None),
@@ -31,85 +31,198 @@ storage = firebase.storage()
 
 def create(group_name, validity, author):
     """Create a group and directory to store group images"""
+
     token = str(uuid.uuid4())
     data = {"name": group_name,
-            "author": author,
+            "creator": author,
             "start_time": str(datetime.datetime.now()),
-            "end_time": str(datetime.datetime.now() + datetime.timedelta(hours=validity)),
+            "end_time": str(datetime.datetime.now() + datetime.timedelta(minutes=validity)),
             "token": token,
             "members": [author]}
-    group_id = database.child("group").push(data)
 
+    # check whether the user is part of any active group
+    user_group = database.child("Users").child(author).child(
+        "group").get().val()
+    if user_group is not None:
+        end_time = database.child('Photos').child(
+            user_group).child('end_time').get().val()
+        end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
+        if end > datetime.datetime.now():
+            raise Exception(
+                "user is part of another active group and not allowed to create a new group")
+    group_id = database.child('Photos').push(data)
+    # Add group information to the user collection
+    database.child("Users").child(author).child("group").set(group_id['name'])
     # Firebase will not allows to create an empty directory
-    storage.child(group_id['name'] + "/.keep").put(".keep")
+    storage.child("images/" + group_id['name'] + "/.keep").put(".keep")
     return group_id['name'], token
 
 
-def update(group_id, user_id):
+def update(group_id, user_id, user_token):
     """Add an user to the group"""
     token = str(uuid.uuid4())
     data = {"token": token}
 
+    active_token = database.child("Photos").child(
+        group_id).child("token").get().val()
+    if user_token != active_token:
+        raise Exception("Invalid one time token")
+
+    # check whether the user is part of any active group
+    user_group = database.child("Users").child(user_id).child(
+        "group").get().val()
+    if user_group is not None:
+        end_time = database.child('Photos').child(
+            user_group).child('end_time').get().val()
+        end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
+        if end > datetime.datetime.now():
+            raise Exception(
+                "user is part of another active group and not allowed to join this group")
+        else:
+            database.child("Users").child(
+                user_id).child("group").update(group_id)
+    database.child("Users").child(user_id).child("group").set(group_id)
+
     # Update one time token
-    database.child("group").child(group_id).update(data)
+    database.child("Photos").child(group_id).update(data)
 
     # Update members
-    members = database.child("group").child(
+    members = database.child("Photos").child(
         group_id).child("members").get().val()
 
     if user_id in members:
         raise Exception("user has already joined the group")
 
     members.append(user_id)
-    database.child("group").child(
+    database.child("Photos").child(
         group_id).child("members").set(members)
     return token
 
 
 def delete(group_id, user_id):
     """Delete a group (if user is an author of the group or remove the user from members list"""
-    author_id = database.child("group").child(
-        group_id).child("author").get().val()
+    author_id = database.child("Photos").child(
+        group_id).child("creator").get().val()
 
     if user_id == author_id:
-        database.child("group").child(
+        database.child("Photos").child(
             group_id).remove()
-        # FIXME: storage.list_files() can be optimized by having a metadata table which stores image urls for the group
-        for file in storage.list_files():
-            path, file = os.path.split(parse.unquote(file.path))
+        for f in storage.list_files():
+            path, file = os.path.split(parse.unquote(f.path))
             if group_id in path:
-                storage.delete(group_id + "/" + file)
+                storage.delete("images/" + group_id + "/" + file)
     else:
-        members = database.child("group").child(
+        members = database.child("Photos").child(
             group_id).child("members").get().val()
         members.remove(user_id)
-        database.child("group").child(
+        database.child("Photos").child(
             group_id).child("members").set(members)
 
 
-def stream_handler(message):
+def housekeeper_cron():
+    """Housekeeper cron Job Google app engine triggers for every 60 seconds"""
+    try:
+        group_ids = database.child("Photos").get()
+        for grp in group_ids.each():
+            batch_delete(group=grp.key())
+    except Exception as ex:
+        logging.info(ex)
+
+
+def batch_delete(group):
+    """ Delete InActive Groups"""
+    try:
+        end_time = database.child('Photos').child(
+            group).child('end_time').get().val()
+        end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
+        if end > datetime.datetime.now():
+            print(group + " Group is valid..")
+        else:
+            print(group + " Ĝroup validity Expired ... Housekeeping(daemon) begins...")
+            for file in storage.list_files():
+                path, file = os.path.split(parse.unquote(file.path))
+                if group in path:
+                    storage.delete("images/" + group + "/" + file)
+            database.child("Photos").child(group).remove()
+            print("Removed Inactive groups...")
+    except Exception as ex:
+        logging.info(ex)
+
+
+def authenticate_group_member(email_id, password):
+    """Authenticate Enduser by email"""
+    user = auth.sign_in_with_email_and_password(
+        email=email_id, password=password)
+    if 'idToken' in user:
+        if user['idToken'] is None:
+            raise Exception("invalid user idToken")
+    else:
+        raise Exception("Current user is not part of any group")
+    return user['idToken']
+
+
+def get_group_id(user_id):
+    """ Retrieve group_id from user_id"""
+    return database.child("Users").child(user_id).child("group").get().val()
+
+
+def retrieve_user_photos(group_id):
+    """ Retrive group photos"""
+    files = []
+    for file in storage.list_files():
+        path, file = os.path.split(parse.unquote(file.path))
+        if group_id in path:
+            files.append(file)
+    return files
+
+
+def get_download_url(group_id, user_token):
+    """ Get Firebase Download URL"""
+    # shit load of crapy operations performed here. think about restructure the schema.
+    urls = []
+    for file in storage.list_files():
+        path, file_name = os.path.split(parse.unquote(file.path))
+        if group_id in path:
+            storage.child("images/" + group_id + "/" +
+                          file_name).download("temp/" + file_name)
+            #storage.delete("images/" + group_id + "/" + file_name)
+            data = storage.child("images/" + group_id + "/" +
+                                 file_name).put("temp/" + file_name, token=user_token)
+            download_url = storage.child(
+                "images/" + group_id + "/" + file_name).get_url(token=data['downloadTokens'])
+            # urls.append(download_url)
+            url = {}
+            url['url'] = download_url
+            url['name'] = file_name
+            urls.append(url)
+    return urls
+
+
+def delete_specific_file(group_id, file_name):
+    """Delete a specific file from storage"""
+    storage.delete("images/" + group_id + "/" + file_name)
+
+def stream_group_message(message):
     """
     Monitor the group photo sharing
     """
     try:
         if 'data' in message:
-            if 'group' in message['data']:
-                print(message['data']['group'])
-                end_time = database.child('group').child(
-                    message['data']['group']).child('end_time').get().val()
-                end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
+            for group in message['data']:
+                end_time = database.child('Photos').child(
+                    group).child('end_time').get().val()
+                end = datetime.datetime.strptime(
+                    end_time, "%Y-%m-%d %H:%M:%S.%f")
 
                 if end > datetime.datetime.now():
                     print("Group is Valid..")
                 else:
-                    print("Expired ... Housekeeping begins...")
-                    group_id = message['data']['group']
+                    print("Expired ... Housekeeping(stream) begins...")
                     for file in storage.list_files():
                         path, file = os.path.split(parse.unquote(file.path))
-                        if group_id in path:
-                            storage.delete(group_id + "/" + file)
-                    database.child("group").child(group_id).remove()
+                        if group in path:
+                            storage.delete("images/" + group + "/" + file)
+                    database.child("Photos").child(group).remove()
     except Exception as ex:
         pass
-
-my_stream = database.child("Photos").stream(stream_handler)
+# database.child("Photos").stream(stream_group_message)

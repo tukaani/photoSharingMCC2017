@@ -3,17 +3,12 @@
 
 <head>
       <title>{% block title %}Photo Organizer{% endblock %}</title>
-      <h3 align="center">Photo Organizer</h3>
       {% block header %}
-      <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" crossorigin="anonymous"></script>
-      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-            crossorigin="anonymous"></script>
-      <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-            crossorigin="anonymous">
-      <link href="https://fonts.googleapis.com/css?family=Bitter:400,300,600" rel="stylesheet" type="text/css" crossorigin="anonymous">
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css" crossorigin="anonymous">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link rel=stylesheet type=text/css href="{{ url_for('static', filename='styles.css') }}"> {% endblock %}
+      <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/style.css') }}">
+      <link href="{{ url_for('static', filename='js/index.js') }}">
+      <link rel=stylesheet type=text/css href="{{ url_for('static', filename='scss/style.scss') }}">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css" crossorigin="anonymous"> {% endblock %}
 </head>
 
 <body>

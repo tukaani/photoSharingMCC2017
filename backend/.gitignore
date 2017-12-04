@@ -1,3 +1,4 @@
 ../.vscode/
 ../mcc_env/
+mcc_env/
 __pycache__/
