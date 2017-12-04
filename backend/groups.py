@@ -109,8 +109,11 @@ def delete(group_id, user_id):
             group_id).remove()
         for f in storage.list_files():
             path, file = os.path.split(parse.unquote(f.path))
+            print(parse.unquote(f.path))
             if group_id in path:
-                storage.delete("images/" + group_id + "/" + file)
+                #storage.delete("images/" + group_id + "/" + file)
+                p = parse.unquote(f.path).split("/")
+                storage.delete("/".join(p[4:]))
     else:
         members = database.child("Photos").child(
             group_id).child("members").get().val()
@@ -138,10 +141,12 @@ def batch_delete(group):
             print(group + " Group is valid..")
         else:
             print(group + " Ĝroup validity Expired ... Housekeeping(daemon) begins...")
-            for file in storage.list_files():
-                path, file = os.path.split(parse.unquote(file.path))
+            for f in storage.list_files():
+                path, file = os.path.split(parse.unquote(f.path))
                 if group in path:
-                    storage.delete("images/" + group + "/" + file)
+                    #storage.delete("images/" + group + "/" + file)
+                    p = parse.unquote(f.path).split("/")
+                    storage.delete("/".join(p[4:]))
             database.child("Photos").child(group).remove()
             print("Removed Inactive groups...")
     except Exception as ex:
