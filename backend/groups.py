@@ -111,15 +111,16 @@ def delete(group_id, user_id):
             path, file = os.path.split(parse.unquote(f.path))
             print(parse.unquote(f.path))
             if group_id in path:
-                #storage.delete("images/" + group_id + "/" + file)
                 p = parse.unquote(f.path).split("/")
-                storage.delete("/".join(p[4:]))
+                index = p.index("images")
+                storage.delete("/".join(p[index:]))
     else:
         members = database.child("Photos").child(
             group_id).child("members").get().val()
         members.remove(user_id)
         database.child("Photos").child(
             group_id).child("members").set(members)
+
 
 def housekeeper_cron():
     """Housekeeper cron Job Google app engine triggers for every 60 seconds"""
@@ -144,9 +145,9 @@ def batch_delete(group):
             for f in storage.list_files():
                 path, file = os.path.split(parse.unquote(f.path))
                 if group in path:
-                    #storage.delete("images/" + group + "/" + file)
                     p = parse.unquote(f.path).split("/")
-                    storage.delete("/".join(p[4:]))
+                    index = p.index("images")
+                    storage.delete("/".join(p[index:]))
             database.child("Photos").child(group).remove()
             print("Removed Inactive groups...")
     except Exception as ex:
@@ -205,6 +206,7 @@ def get_download_url(group_id, user_token):
 def delete_specific_file(group_id, file_name):
     """Delete a specific file from storage"""
     storage.delete("images/" + group_id + "/" + file_name)
+
 
 def stream_group_message(message):
     """
