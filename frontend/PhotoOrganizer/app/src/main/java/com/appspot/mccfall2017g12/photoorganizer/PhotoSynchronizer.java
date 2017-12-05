@@ -12,6 +12,8 @@ import android.arch.persistence.room.Room;
 import android.arch.persistence.room.RoomDatabase;
 import android.arch.persistence.room.Transaction;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -28,10 +30,15 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 
@@ -304,8 +311,6 @@ public class PhotoSynchronizer {
                 return;
             }
 
-            // if CURRENT_RESOLUTION_LEVEL = "low" or "high" shrink photo
-
             Photo.FileInfo onlineFileInfo = new Photo.FileInfo();
             onlineFileInfo.file = UUID.randomUUID().toString() + ".jpg";
             onlineFileInfo.resolution = localFileInfo.resolution;
@@ -319,11 +324,55 @@ public class PhotoSynchronizer {
 
             FileUploadListener listener = new FileUploadListener();
 
-            fileRef.putFile(Uri.fromFile(localFile))
-                    .addOnSuccessListener(executor, listener)
-                    .addOnFailureListener(executor, listener);
+            // Resolution needs to be downgraded
+            if(CURRENT_RESOLUTION_LEVEL != ResolutionTools.LEVEL_FULL) {
+                byte[] decodedfile = decodeFile(localFile);
+                if(decodedfile != null) {
+                    System.out.println("Uploading resolution " + ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL) + " to server");
+                    fileRef.putBytes(decodedfile)
+                            .addOnSuccessListener(executor, listener)
+                            .addOnFailureListener(executor, listener);
+
+                } else {
+                    System.out.println("Failed to change the resolution of the image");
+                }
+            } else {
+                System.out.println("Uploading full resolution of the image");
+                fileRef.putFile(Uri.fromFile(localFile))
+                        .addOnSuccessListener(executor, listener)
+                        .addOnFailureListener(executor, listener);
+            }
 
             release();
+        }
+
+        private byte[] decodeFile(File f) {
+            try {
+                // Decode image size
+                BitmapFactory.Options o = new BitmapFactory.Options();
+                o.inJustDecodeBounds = true;
+                BitmapFactory.decodeStream(new FileInputStream(f), null, o);
+
+                // The new size we want to scale to
+                final int REQUIRED_SIZE = ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL);
+
+                int scale = 1;
+                if (o.outHeight > REQUIRED_SIZE ) {
+                    scale = (int)Math.pow(2, (int) Math.ceil(Math.log(REQUIRED_SIZE /
+                            (double) o.outHeight) / Math.log(0.5)));
+                }
+                // Decode with inSampleSize
+                BitmapFactory.Options o2 = new BitmapFactory.Options();
+                o2.inSampleSize = scale;
+                Bitmap bitmap =  BitmapFactory.decodeStream(new FileInputStream(f), null, o2);
+
+                // Change Bitmap to byte array
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                return stream.toByteArray();
+
+            } catch (FileNotFoundException e) {}
+            return null;
         }
 
         private class FileUploadListener implements OnFailureListener,
