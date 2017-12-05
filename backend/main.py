@@ -170,18 +170,19 @@ def files():
 def login():
     """Initiate user session"""
     try:
+        urls = []
         email = request.form['email']
         password = request.form['password']
         token = groups.authenticate_group_member(
             email_id=email, password=password)
         user_id = users.get_user_by_email(email_id=email)
         group_id = groups.get_group_id(user_id=user_id)
-        #group_id = "group1"  # hardcoded for testing purpose
         session.clear()
         session["user"] = email
         session["group"] = group_id
         session['token'] = token
-        urls = groups.get_download_url(group_id=group_id, user_token=token)
+        if group_id is not None:
+            urls = groups.get_download_url(group_id=group_id, user_token=token)
         return render_template("filemanager/dashboard.html", files=urls)
     except Exception as e:
         logging.exception(e)
@@ -201,8 +202,10 @@ def delete():
     info = request.data.decode('utf-8')
     data = info.split("=")
     groups.delete_specific_file(group_id=session["group"], file_name=data[1])
-    urls = groups.get_download_url(group_id=session["group"], user_token=session["token"])
+    urls = groups.get_download_url(
+        group_id=session["group"], user_token=session["token"])
     return render_template("filemanager/dashboard.html", files=urls)
+
 
 @app.errorhandler(500)
 def server_error_500(error):
