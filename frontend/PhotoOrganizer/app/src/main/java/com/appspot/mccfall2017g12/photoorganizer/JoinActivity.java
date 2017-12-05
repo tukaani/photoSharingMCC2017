@@ -57,42 +57,81 @@ public class JoinActivity extends AppCompatActivity implements ZXingScannerView.
     public void handleResult(Result result) {
 
 
-        sendPost(result.getText());
+        sendPost(result.getText(), JoinActivity.this);
         zXingScannerView.stopCamera();
         JoinActivity.this.startActivity(new Intent(JoinActivity.this, MainActivity.class));
     }
 
 
 
-    public void sendPost(final String qr) {
+    public void sendPost(final String qr, final JoinActivity joinActivity) {
+
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
+                final JoinActivity parent=joinActivity;
                 try {
+
                     URL url = new URL("http://10.100.23.218:8080/photoorganizer/api/v1.0/group/join");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
-                    conn.setRequestProperty("Authorization",    User.get().getIdtoken() );//User.get().getIdtoken());
+                    conn.setRequestProperty("Authorization", User.get().getIdtoken() );//User.get().getIdtoken());
                     conn.setDoOutput(true);
                     conn.setDoInput(true);
 
                     JSONObject jsonParam = new JSONObject();
                     String[] splitStr = qr.split("\\s+");
-                    jsonParam.put("group_id", splitStr[0]);
-                    jsonParam.put("token", splitStr[1]);
-                    jsonParam.put("user_id", mAuth.getCurrentUser().getUid());
+                    if(splitStr.length==2) {
+                        jsonParam.put("group_id", splitStr[0]);
+                        jsonParam.put("token", splitStr[1]);
+                        jsonParam.put("user_id", mAuth.getCurrentUser().getUid());
 
 
-                    Log.i("JSON", jsonParam.toString());
-                    DataOutputStream os = new DataOutputStream(conn.getOutputStream());
-                    os.writeBytes(jsonParam.toString());
+                        Log.i("JSON", jsonParam.toString());
+                        DataOutputStream os = new DataOutputStream(conn.getOutputStream());
+                        os.writeBytes(jsonParam.toString());
 
-                    os.flush();
-                    os.close();
+                        os.flush();
+                        os.close();
+                        int responseCode = conn.getResponseCode();
+                        if (responseCode == HttpURLConnection.HTTP_OK) {
+                            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                            StringBuilder sb = new StringBuilder();
+                            String line;
+                            while ((line = br.readLine()) != null) {
+                                sb.append(line + "\n");
+                            }
+
+                        }
+
+                        if (responseCode == HttpURLConnection.HTTP_BAD_REQUEST) {
+                            parent.runOnUiThread(new Runnable() {
+                                public void run() {
+                                    Toast.makeText(parent.getBaseContext(), "Bad request, try again!", Toast.LENGTH_LONG).show();
+                                    JoinActivity.this.startActivity(new Intent(JoinActivity.this, GroupManagementActivity.class));
+                                    finish();
+                                }
+                            });
 
 
-                    conn.disconnect();
+                        }
+
+
+                        conn.disconnect();
+                    }
+                    else{
+                        parent.runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(parent.getBaseContext(), "QR invalid, try again!", Toast.LENGTH_LONG).show();
+                                JoinActivity.this.startActivity(new Intent(JoinActivity.this, GroupManagementActivity.class));
+                                finish();
+
+
+                            }
+                        });
+                    }
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
