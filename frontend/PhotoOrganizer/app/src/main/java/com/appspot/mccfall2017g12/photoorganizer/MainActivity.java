@@ -76,10 +76,10 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void launch(Context context) {
                     Class klass;
-                    if (User.get().getGroupId() == null)
-                        klass = GroupManagementActivity.class;
-                    else
+                    if (User.get().isInGroup())
                         klass = GroupActivity.class;
+                    else
+                        klass = GroupManagementActivity.class;
                     Intent intent = new Intent(MainActivity.this, klass);
                     MainActivity.this.startActivity(intent);
                 }

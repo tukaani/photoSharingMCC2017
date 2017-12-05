@@ -2,7 +2,6 @@ package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.ImageView;
 
@@ -13,18 +12,23 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
-import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 
-public class QRActivity extends AppCompatActivity {
+public class QRActivity extends UserSensitiveActivity {
 
     private static final int QR_SIZE = 100;
-    private final ValueEventListener listener;
-    private final DatabaseReference reference;
+    private ValueEventListener listener;
+    private DatabaseReference reference;
 
     private ImageView qrView;
 
-    public QRActivity() {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_qr);
+
+        qrView = findViewById(R.id.qr_image);
+
         final String groupId = User.get().getGroupId();
 
         reference = FirebaseDatabase.getInstance()
@@ -47,14 +51,6 @@ public class QRActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_qr);
-
-        qrView = findViewById(R.id.qr_image);
-    }
-
-    @Override
     protected void onStart() {
         super.onStart();
         reference.addValueEventListener(listener);
@@ -64,6 +60,11 @@ public class QRActivity extends AppCompatActivity {
     protected void onStop() {
         reference.removeEventListener(listener);
         super.onStop();
+    }
+
+    @Override
+    protected boolean shouldGoOn() {
+        return User.get().isInGroup();
     }
 
     Bitmap encodeAsBitmap(String str) {

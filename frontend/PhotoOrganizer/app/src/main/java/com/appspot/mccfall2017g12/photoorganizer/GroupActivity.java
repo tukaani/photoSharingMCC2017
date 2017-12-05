@@ -1,7 +1,6 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -21,7 +20,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GroupActivity extends AppCompatActivity {
+public class GroupActivity extends UserSensitiveActivity {
 
     private MemberAdapter memberAdapter;
     private RecyclerView recyclerView;
@@ -74,6 +73,11 @@ public class GroupActivity extends AppCompatActivity {
         recyclerView.setAdapter(null);
 
         memberAdapter = null;
+    }
+
+    @Override
+    protected boolean shouldGoOn() {
+        return User.get().isInGroup();
     }
 
     private class Member implements Diffable<Member> {

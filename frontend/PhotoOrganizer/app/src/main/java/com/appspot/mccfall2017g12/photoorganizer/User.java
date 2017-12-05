@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
  * Created by Edgar on 27/11/2017.
  */
 
-public class User {
+public class User extends Observable {
 
     private static final String TAG = "user";
 
@@ -204,6 +204,12 @@ public class User {
         }
     }
 
+    public boolean isInGroup() {
+        synchronized (lock) {
+            return getState(STATE_IN_GROUP);
+        }
+    }
+
     private boolean getState(int flag) {
         synchronized (lock) {
             return (state & flag) > 0;
@@ -211,11 +217,18 @@ public class User {
     }
 
     private void setState(int flag, boolean value) {
+        boolean changed;
         synchronized (lock) {
+            int oldState = state;
             if (value)
                 state |= flag;
             else
                 state &= ~flag;
+            changed = (state != oldState);
+        }
+        if (changed) {
+            setChanged();
+            notifyObservers();
         }
     }
 

@@ -1,7 +1,5 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,15 +8,11 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.google.zxing.Result;
-
-import me.dm7.barcodescanner.zxing.ZXingScannerView;
-
 /**
  * Created by Ilkka on 27.11.2017.
  */
 
-public class GroupManagementActivity extends Activity  {
+public class GroupManagementActivity extends UserSensitiveActivity {
 
 
 
@@ -63,8 +57,8 @@ public class GroupManagementActivity extends Activity  {
 
     }
 
-
-
-
-
+    @Override
+    protected boolean shouldGoOn() {
+        return !User.get().isInGroup();
+    }
 }
