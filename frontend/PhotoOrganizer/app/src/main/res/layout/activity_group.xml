@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     tools:context="com.appspot.mccfall2017g12.photoorganizer.GroupActivity">
 
+
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
@@ -22,7 +23,7 @@
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="20dp"
         android:layout_marginTop="8dp"
         android:text="Name"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
@@ -36,15 +37,14 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:text="TextView"
-        app:layout_constraintStart_toEndOf="@+id/textView2"
-        tools:layout_editor_absoluteY="62dp"
-        android:layout_marginLeft="8dp" />
+        app:layout_constraintBaseline_toBaselineOf="@+id/textView2"
+        app:layout_constraintStart_toEndOf="@+id/textView2" />
 
     <TextView
         android:id="@+id/textView4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="20dp"
         android:layout_marginTop="8dp"
         android:text="Expiration"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
@@ -66,7 +66,7 @@
         android:id="@+id/textView6"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="20dp"
         android:text="Members"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
         app:layout_constraintBaseline_toBaselineOf="@+id/button"
@@ -90,8 +90,7 @@
         android:layout_width="368dp"
         android:layout_height="332dp"
         android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="20dp"
         app:layout_constraintTop_toBottomOf="@id/button"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

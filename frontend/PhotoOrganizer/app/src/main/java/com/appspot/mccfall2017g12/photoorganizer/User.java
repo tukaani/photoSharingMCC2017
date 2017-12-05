@@ -38,7 +38,9 @@ public class User {
     private String userName;
     private String groupId;
     private String Idtoken;
+    private String groupName;
     private PhotoSynchronizer synchronizer;
+    private String expirationDate;
     private int state = 0;
     private final LocalDatabase database;
     private final FirebaseDatabase firebaseDatabase;
@@ -119,15 +121,17 @@ public class User {
     }
 
     private void initGroupAlbum(final String groupId) {
-        firebaseDatabase.getReference("groups").child(groupId).child("name")
+        firebaseDatabase.getReference("groups").child(groupId)
                 .addListenerForSingleValueEvent(
                 new AsyncValueEventListener(executor) {
                     @Override
                     public void onDataChangeAsync(DataSnapshot dataSnapshot) {
                         Album album = new Album();
-                        album.albumId = groupId;
-                        album.name = dataSnapshot.getValue(String.class);
 
+                        album.albumId = groupId;
+                        album.name = dataSnapshot.child("name").getValue(String.class);
+                        expirationDate = dataSnapshot.child("end_time").getValue(String.class);
+                        groupName = album.name;
                         database.galleryDao().insertAlbums(album);
 
                         setState(STATE_GROUP_ALBUM_OK, true);
@@ -243,4 +247,8 @@ public class User {
     public String getIdtoken() {
         return Idtoken;
     }
+
+    public String getGroupName() { return groupName; }
+
+    public String getExpirationDate() { return expirationDate; }
 }

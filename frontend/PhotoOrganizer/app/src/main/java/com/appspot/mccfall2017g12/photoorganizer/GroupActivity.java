@@ -17,6 +17,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
@@ -24,11 +26,20 @@ import java.util.TreeMap;
 
 public class GroupActivity extends AppCompatActivity {
 
+    private FirebaseDatabase firebaseDatabase;
+    private TextView mGroup;
+    private TextView mExpiration;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group);
-
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        mGroup = (TextView) findViewById(R.id.textView3);
+        mGroup.setText(User.get().getGroupName());
+        mExpiration = (TextView) findViewById(R.id.textView5);
+        mExpiration.setText(User.get().getExpirationDate());
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
 
         recyclerView.setHasFixedSize(true);
