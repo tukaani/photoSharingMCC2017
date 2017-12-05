@@ -21,8 +21,8 @@ firebase_config = {
 firebase = pyrebase.initialize_app(firebase_config)
 
 db = firebase.database()
-data = {"username": "testuser3"}
-user = db.child("Users").push(data)
+data = {"username": "testuser2"}
+user = db.child("users").push(data)
 # print(uuid.uuid4())
 print(user['name'])
 # user_group_id = db.child("Users").child(
