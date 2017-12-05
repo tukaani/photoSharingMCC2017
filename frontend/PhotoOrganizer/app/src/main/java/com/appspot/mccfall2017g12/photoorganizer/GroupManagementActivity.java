@@ -1,6 +1,7 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -17,15 +18,14 @@ import me.dm7.barcodescanner.zxing.ZXingScannerView;
  * Created by Ilkka on 27.11.2017.
  */
 
-public class GroupManagementActivity extends Activity implements ZXingScannerView.ResultHandler {
+public class GroupManagementActivity extends Activity  {
 
-    private ZXingScannerView zXingScannerView;
+
 
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_management);
-
         final MenuItem[] menuItems = new MenuItem[]{
                 new MenuItem(R.string.creategroup, R.drawable.ic_group_add_black_24dp) {
                     @Override
@@ -38,13 +38,13 @@ public class GroupManagementActivity extends Activity implements ZXingScannerVie
                 new MenuItem(R.string.joingroup, R.drawable.ic_group_black_24dp) {
                     @Override
                     public void launch(Context context) {
+                        GroupManagementActivity.this.startActivity(new Intent(GroupManagementActivity.this,JoinActivity.class));
                         Toast.makeText(context, "Join your friends", Toast.LENGTH_SHORT).show();
                     }
                 },
                 new MenuItem(R.string.leavegroup, R.drawable.ic_person_black_24dp) {
                     @Override
                     public void launch(Context context) {
-                        read();
                         Toast.makeText(context, "Going solo", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -60,24 +60,11 @@ public class GroupManagementActivity extends Activity implements ZXingScannerVie
                 menuItem.launch(GroupManagementActivity.this);
             }
         });
+
     }
 
 
-    void read(){
-        zXingScannerView = new ZXingScannerView(getApplicationContext());
-        setContentView(zXingScannerView);
-        zXingScannerView.setResultHandler(this);
-        zXingScannerView.startCamera();
-    }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        zXingScannerView.stopCamera();
-    }
 
-    @Override
-    public void handleResult(Result result) {
-        zXingScannerView.resumeCameraPreview(this);
-    }
+
 }

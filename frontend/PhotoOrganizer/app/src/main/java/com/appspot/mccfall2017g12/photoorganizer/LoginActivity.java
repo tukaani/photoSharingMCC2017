@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -71,23 +72,30 @@ public class LoginActivity extends AppCompatActivity {
         mLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mAuth.signInWithEmailAndPassword(mEmail.getText().toString(), mPassword.getText().toString())
-                        .addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
-                            @Override
-                            public void onComplete(@NonNull Task<AuthResult> task) {
-                                if (task.isSuccessful()) {
-                                    // Sign in success, update User object
-                                    User.set(task.getResult().getUser().getUid(), getApplicationContext());
-                                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                if(!mEmail.getText().toString().matches("") && !mPassword.getText().toString().matches("")) {
+                    mAuth.signInWithEmailAndPassword(mEmail.getText().toString(), mPassword.getText().toString())
+                            .addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
+                                @Override
+                                public void onComplete(@NonNull Task<AuthResult> task) {
+                                    if (task.isSuccessful()) {
+                                        // Sign in success, update User object
+                                        User.set(task.getResult().getUser().getUid(), getApplicationContext());
+                                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
 
-                                } else {
-                                    // If sign in fails, display a message to the user.
-                                    System.out.println("Error login");
+                                    } else {
+                                        // If sign in fails, display a message to the user.
+                                        Toast.makeText(LoginActivity.this, "Incorrect login, try again", Toast.LENGTH_SHORT).show();
+                                        mPassword.setText("");
+                                        mPassword.requestFocus();
+                                    }
+
+                                    // ...
                                 }
-
-                                // ...
-                            }
-                        });
+                            });
+                }
+                else{
+                    Toast.makeText(LoginActivity.this, "Fill both fields", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -102,7 +110,11 @@ public class LoginActivity extends AppCompatActivity {
         super.onStart();
         // Check if user is signed in (non-null) and update UI accordingly.
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        //if(currentUser != null) startActivity(new Intent(LoginActivity.this, MainActivity.class));
+        if(currentUser != null) {
+            User.set(currentUser.getUid(), getApplicationContext());
+            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+
+        }
     }
 
 

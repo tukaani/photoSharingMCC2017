@@ -15,6 +15,8 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -45,45 +47,69 @@ public class RegisterActivity extends AppCompatActivity {
         mSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (!mPassword.getText().toString().matches("") && !mEmail.getText().toString().matches("") && !mUsername.getText().toString().matches("")) {
+                    if (mPassword.getText().toString().length() > 5) {
 
-                if(mPassword.getText().toString().length()>5) {
+                        if (mPassword.getText().toString().equals(mPasswordConfirm.getText().toString())) {
 
-                    if (mPassword.getText().toString().equals(mPasswordConfirm.getText().toString()) && mEmail.getText() != null) {
+                            mAuth.createUserWithEmailAndPassword(mEmail.getText().toString(), mPassword.getText().toString())
+                                    .addOnCompleteListener(RegisterActivity.this, new OnCompleteListener<AuthResult>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<AuthResult> task) {
+                                            if (task.isSuccessful()) {
+                                                // Sign in success, update UI with the signed-in user's information
+                                                System.out.println("created");
+                                                Log.d(TAG, "createUserWithEmail:success");
+                                                FirebaseUser user = mAuth.getCurrentUser();
+                                                mDatabase.child("users").child(user.getUid()).child("username").setValue(mUsername.getText().toString());
+                                                Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                                                startActivity(intent);
 
-                        mAuth.createUserWithEmailAndPassword(mEmail.getText().toString(), mPassword.getText().toString())
-                                .addOnCompleteListener(RegisterActivity.this, new OnCompleteListener<AuthResult>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<AuthResult> task) {
-                                        if (task.isSuccessful()) {
-                                            // Sign in success, update UI with the signed-in user's information
-                                            System.out.println("created");
-                                            Log.d(TAG, "createUserWithEmail:success");
-                                            FirebaseUser user = mAuth.getCurrentUser();
-                                            mDatabase.child("users").child(user.getUid()).child("username").setValue(mUsername.getText().toString());
-                                            Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
-                                            startActivity(intent);
+                                            } else {
+                                                // If sign in fails, display a message to the user.
+                                                try {
+                                                    throw task.getException();
+                                                } catch (FirebaseAuthInvalidCredentialsException e) {
+                                                    Toast.makeText(RegisterActivity.this, "Email invalid", Toast.LENGTH_SHORT).show();
+                                                    mEmail.setText("");
+                                                    mEmail.requestFocus();
+                                                } catch (FirebaseAuthUserCollisionException e) {
+                                                    Toast.makeText(RegisterActivity.this, "Email already in use", Toast.LENGTH_SHORT).show();
+                                                    mEmail.setText("");
+                                                    mEmail.requestFocus();
+                                                } catch (Exception e) {
+                                                    Log.e(TAG, e.getMessage());
+                                                }
+                                            }
 
-                                        } else {
-                                            // If sign in fails, display a message to the user.
-                                            Log.w(TAG, "createUserWithEmail:failure", task.getException());
 
                                         }
+                                    });
 
-
-                                    }
-                                });
-
+                        } else {
+                            mPassword.setText("");
+                            mPassword.setHint("Password");
+                            mPassword.setHintTextColor(Color.RED);
+                            mPassword.requestFocus();
+                            mPasswordConfirm.setText("");
+                            mPasswordConfirm.setHint("Repeat password");
+                            mPasswordConfirm.setHintTextColor(Color.RED);
+                            Toast.makeText(RegisterActivity.this, "Password does not match", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        mPassword.setText("");
+                        mPassword.setHint("Password");
+                        mPassword.setHintTextColor(Color.RED);
+                        mPassword.requestFocus();
+                        mPasswordConfirm.setText("");
+                        mPasswordConfirm.setHint("Repeat password");
+                        mPasswordConfirm.setHintTextColor(Color.RED);
+                        Toast.makeText(RegisterActivity.this, "Password lenght must have more than 5 characters", Toast.LENGTH_LONG).show();
                     }
                 }
                 else{
-                    mPassword.setText("");
-                    mPassword.setHint("Password");
-                    mPassword.setHintTextColor(Color.RED);
-                    mPassword.requestFocus();
-                    mPasswordConfirm.setText("");
-                    mPasswordConfirm.setHint("Repeat password");
-                    mPasswordConfirm.setHintTextColor(Color.RED);
-                    Toast.makeText(RegisterActivity.this,"Password lenght must have more than 5 characters", Toast.LENGTH_LONG).show();
+                    Toast.makeText(RegisterActivity.this, "Fill all fields", Toast.LENGTH_SHORT).show();
+
                 }
             }
         });

@@ -19,9 +19,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity"></activity>
+        <activity android:name=".MainActivity" />
         <activity android:name=".LoginActivity">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -44,17 +43,18 @@
                 android:resource="@xml/provider_paths" />
         </provider>
 
-        <activity android:name=".RegisterActivity"></activity>
+        <activity android:name=".RegisterActivity" />
 
         <receiver
-            android:name="NetworkChangeReceiver"
-            android:label="NetworkChangeReceiver" >
+            android:name=".NetworkChangeReceiver"
+            android:label="NetworkChangeReceiver">
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
                 <action android:name="android.net.wifi.WIFI_STATE_CHANGED" />
             </intent-filter>
         </receiver>
 
+        <activity android:name=".JoinActivity"></activity>
     </application>
 
 </manifest>
