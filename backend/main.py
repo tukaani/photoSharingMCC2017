@@ -7,6 +7,8 @@ import logging
 import base64
 import http
 import datetime
+from exceptions import InvalidUsage
+import json
 import requests
 from flask import Flask, request, session, redirect, url_for, jsonify
 from flask import render_template
@@ -14,26 +16,10 @@ import detect_image
 import groups
 import users
 from request_validators import is_authorized_user, validate_authorization_header, validate_group_create_request, validate_group_join_request, validate_group_delete_request
-import json
+
 
 app = Flask(__name__)
 app.secret_key = 'F12Zr47j3yX R~X@lH!jmM]Lwf/,?KT'
-
-
-class InvalidUsage(Exception):
-    status_code = 400
-
-    def __init__(self, message, status_code=None, payload=None):
-        Exception.__init__(self)
-        self.message = message
-        if status_code is not None:
-            self.status_code = status_code
-        self.payload = payload
-
-    def to_dict(self):
-        rv = dict(self.payload or ())
-        rv['message'] = self.message
-        return rv
 
 
 @app.before_request
