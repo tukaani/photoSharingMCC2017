@@ -3,20 +3,18 @@ package com.appspot.mccfall2017g12.photoorganizer;
 import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
-import android.support.annotation.LayoutRes;
 import android.support.annotation.MainThread;
 import android.support.annotation.Nullable;
 import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
-import android.view.View;
 
 public abstract class LiveDataAdapter<T extends Diffable<T>, VH extends RecyclerView.ViewHolder>
         extends RecyclerView.Adapter<VH> {
 
     private final LifecycleOwner owner;
     private LiveData<T[]> liveData;
-    private T[] items;
     private final Observer<T[]> itemsObserver;
+    private T[] items;
 
     public LiveDataAdapter(LifecycleOwner owner) {
 
@@ -33,6 +31,22 @@ public abstract class LiveDataAdapter<T extends Diffable<T>, VH extends Recycler
         this.liveData.observe(this.owner, this.itemsObserver);
     }
 
+    private class ItemsObserver implements Observer<T[]> {
+
+        @Override
+        public void onChanged(@Nullable T[] newItems) {
+            setItems(newItems);
+        }
+    }
+
+    protected void setItems(T[] newItems) {
+        T[] oldItems = this.items;
+        this.items = newItems;
+        DiffUtil.calculateDiff(new DiffCallback<>(oldItems, newItems))
+                .dispatchUpdatesTo(this);
+    }
+
+
     public T getItem(int position) {
         return this.items[position];
     }
@@ -40,17 +54,6 @@ public abstract class LiveDataAdapter<T extends Diffable<T>, VH extends Recycler
     @Override
     public int getItemCount() {
         return this.items == null ? 0 : this.items.length;
-    }
-
-    private class ItemsObserver implements Observer<T[]> {
-
-        @Override
-        public void onChanged(@Nullable T[] newItems) {
-            T[] oldItems = LiveDataAdapter.this.items;
-            LiveDataAdapter.this.items = newItems;
-            DiffUtil.calculateDiff(new DiffCallback<>(oldItems, newItems))
-                    .dispatchUpdatesTo(LiveDataAdapter.this);
-        }
     }
 
     private static class DiffCallback<Old extends Diffable<New>, New> extends DiffUtil.Callback {
