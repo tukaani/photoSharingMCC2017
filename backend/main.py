@@ -181,6 +181,7 @@ def login():
         session["user"] = email
         session["group"] = group_id
         session['token'] = token
+        print(token)
         if group_id is not None:
             urls = groups.get_download_url(group_id=group_id, user_token=token)
         return render_template("filemanager/dashboard.html", files=urls)
