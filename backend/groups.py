@@ -142,6 +142,10 @@ def batch_delete(group):
             print(group + " Group is valid..")
         else:
             print(group + " Ĝroup validity Expired ... Housekeeping(daemon) begins...")
+            members = database.child("Photos").child(
+            group).child("members").get().val()
+            for member in members:
+                 database.child("Users").child(member).child("group").remove()
             for f in storage.list_files():
                 path, file = os.path.split(parse.unquote(f.path))
                 if group in path:
