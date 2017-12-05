@@ -20,6 +20,22 @@ app = Flask(__name__)
 app.secret_key = 'F12Zr47j3yX R~X@lH!jmM]Lwf/,?KT'
 
 
+class InvalidUsage(Exception):
+    status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv['message'] = self.message
+        return rv
+
+
 @app.before_request
 def session_management():
     """
@@ -56,10 +72,7 @@ def create_group():
         return jsonify({'status': http.HTTPStatus.CREATED, 'group_id': str(group_id), 'token': token})
     except Exception as ex:
         logging.exception(ex)
-    return jsonify({
-        'status': http.HTTPStatus.BAD_REQUEST,
-        'error': "Bad Request"
-    })
+    raise InvalidUsage('bad request', status_code=400)
 
 
 @app.route('/photoorganizer/api/v1.0/group/join', methods=['POST'])
@@ -79,10 +92,7 @@ def join_group():
         return jsonify({'status': http.HTTPStatus.OK, 'refreshedtoken': token})
     except Exception as ex:
         logging.exception(ex)
-    return jsonify({
-        'status': http.HTTPStatus.BAD_REQUEST,
-        'error': "Bad Request"
-    })
+    raise InvalidUsage('bad request', status_code=400)
 
 
 @app.route('/photoorganizer/api/v1.0/group/delete', methods=['POST'])
@@ -100,10 +110,7 @@ def delete_group():
         return jsonify({'status': http.HTTPStatus.OK, 'message': "success"})
     except Exception as ex:
         logging.exception(ex)
-        return jsonify({
-            'status': http.HTTPStatus.BAD_REQUEST,
-            'error': "Bad Request"
-        })
+    raise InvalidUsage('bad request', status_code=400)
 
 
 @app.route('/photoorganizer/api/v1.0/process', methods=['GET', 'POST'])
@@ -223,6 +230,13 @@ def server_error_403(error):
         'status': http.HTTPStatus.FORBIDDEN,
         'error': "access forbidden"
     })
+
+
+@app.errorhandler(InvalidUsage)
+def handle_invalid_usage(error):
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
 
 
 @app.route('/photoorganizer/housekeeping', methods=['GET', 'POST'])
