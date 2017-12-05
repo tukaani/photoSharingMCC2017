@@ -53,7 +53,7 @@ def create_group():
         valid_hours = content['validity']
         group_id, token = groups.create(
             group_name=group_name, validity=valid_hours, author=author)
-        return jsonify({'group_id': str(group_id), 'token': token})
+        return jsonify({'status': http.HTTPStatus.CREATED, 'group_id': str(group_id), 'token': token})
     except Exception as ex:
         logging.exception(ex)
     return jsonify({
@@ -76,7 +76,7 @@ def join_group():
         token = content['token']
         token = groups.update(
             group_id=group_id, user_id=user_id, user_token=token)
-        return jsonify({'refreshedtoken': token})
+        return jsonify({'status': http.HTTPStatus.OK, 'refreshedtoken': token})
     except Exception as ex:
         logging.exception(ex)
     return jsonify({
@@ -97,7 +97,7 @@ def delete_group():
         group_id = content['group_id']
         user_id = content['user_id']
         groups.delete(group_id=group_id, user_id=user_id)
-        return jsonify({'status': "success"})
+        return jsonify({'status': http.HTTPStatus.OK, 'message': "success"})
     except Exception as ex:
         logging.exception(ex)
         return jsonify({
