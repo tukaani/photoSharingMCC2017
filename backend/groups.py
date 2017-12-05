@@ -44,13 +44,13 @@ def create(group_name, validity, author):
     user_group = database.child("users").child(author).child(
         "group").get().val()
     if user_group is not None:
-        end_time = database.child('photos').child(
+        end_time = database.child('groups').child(
             user_group).child('end_time').get().val()
         end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
         if end > datetime.datetime.now():
             raise Exception(
                 "user is part of another active group and not allowed to create a new group")
-    group_id = database.child('photos').push(data)
+    group_id = database.child('groups').push(data)
     # Add group information to the user collection
     database.child("users").child(author).child("group").set(group_id['name'])
     # Firebase will not allows to create an empty directory
@@ -101,11 +101,11 @@ def update(group_id, user_id, user_token):
 
 def delete(group_id, user_id):
     """Delete a group (if user is an author of the group or remove the user from members list"""
-    author_id = database.child("photos").child(
+    author_id = database.child("groups").child(
         group_id).child("creator").get().val()
     database.child("users").child(user_id).child("group").remove()
     if user_id == author_id:
-        database.child("photos").child(
+        database.child("groups").child(
             group_id).remove()
         for f in storage.list_files():
             path, file = os.path.split(parse.unquote(f.path))
@@ -115,17 +115,17 @@ def delete(group_id, user_id):
                 index = p.index("images")
                 storage.delete("/".join(p[index:]))
     else:
-        members = database.child("photos").child(
+        members = database.child("groups").child(
             group_id).child("members").get().val()
         members.remove(user_id)
-        database.child("photos").child(
+        database.child("groups").child(
             group_id).child("members").set(members)
 
 
 def housekeeper_cron():
     """Housekeeper cron Job Google app engine triggers for every 60 seconds"""
     try:
-        group_ids = database.child("photos").get()
+        group_ids = database.child("groups").get()
         for grp in group_ids.each():
             batch_delete(group=grp.key())
     except Exception as ex:
@@ -135,14 +135,14 @@ def housekeeper_cron():
 def batch_delete(group):
     """ Delete InActive Groups"""
     try:
-        end_time = database.child('photos').child(
+        end_time = database.child('groups').child(
             group).child('end_time').get().val()
         end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
         if end > datetime.datetime.now():
             print(group + " Group is valid..")
         else:
             print(group + " Ĝroup validity Expired ... Housekeeping(daemon) begins...")
-            members = database.child("photos").child(
+            members = database.child("groups").child(
             group).child("members").get().val()
             for member in members:
                  database.child("users").child(member).child("group").remove()
@@ -152,7 +152,7 @@ def batch_delete(group):
                     p = parse.unquote(f.path).split("/")
                     index = p.index("images")
                     storage.delete("/".join(p[index:]))
-            database.child("photos").child(group).remove()
+            database.child("groups").child(group).remove()
             print("Removed Inactive groups...")
     except Exception as ex:
         logging.info(ex)
@@ -227,7 +227,7 @@ def stream_group_message(message):
     try:
         if 'data' in message:
             for group in message['data']:
-                end_time = database.child('photos').child(
+                end_time = database.child('groups').child(
                     group).child('end_time').get().val()
                 end = datetime.datetime.strptime(
                     end_time, "%Y-%m-%d %H:%M:%S.%f")
@@ -240,7 +240,7 @@ def stream_group_message(message):
                         path, file = os.path.split(parse.unquote(file.path))
                         if group in path:
                             storage.delete("images/" + group + "/" + file)
-                    database.child("photos").child(group).remove()
+                    database.child("groups").child(group).remove()
     except Exception as ex:
         pass
 # database.child("Photos").stream(stream_group_message)
