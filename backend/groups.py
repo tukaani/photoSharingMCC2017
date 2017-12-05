@@ -185,27 +185,35 @@ def get_download_url(group_id, user_token):
     """ Get Firebase Download URL"""
     # shit load of crapy operations performed here. think about restructure the schema.
     urls = []
-    for file in storage.list_files():
-        path, file_name = os.path.split(parse.unquote(file.path))
+    for f in storage.list_files():
+        path, file_name = os.path.split(parse.unquote(f.path))
         if group_id in path:
-            storage.child("images/" + group_id + "/" +
-                          file_name).download("temp/" + file_name)
-            #storage.delete("images/" + group_id + "/" + file_name)
-            data = storage.child("images/" + group_id + "/" +
-                                 file_name).put("temp/" + file_name, token=user_token)
-            download_url = storage.child(
-                "images/" + group_id + "/" + file_name).get_url(token=data['downloadTokens'])
-            # urls.append(download_url)
-            url = {}
-            url['url'] = download_url
-            url['name'] = file_name
-            urls.append(url)
+            if file_name != "":
+                p = parse.unquote(f.path).split("/")
+                index = p.index("images")
+                print("/".join(p[index:]))
+                storage.child("/".join(p[index:])).download("temp/" + file_name)
+                data = storage.child(
+                    "/".join(p[index:])).put("temp/" + file_name, token=user_token)
+                download_url = storage.child(
+                    "/".join(p[index:])).get_url(token=data['downloadTokens'])
+                if file_name != ".keep":
+                    url = {}
+                    url['url'] = download_url
+                    url['name'] = file_name
+                    urls.append(url)
     return urls
 
 
 def delete_specific_file(group_id, file_name):
     """Delete a specific file from storage"""
-    storage.delete("images/" + group_id + "/" + file_name)
+    for f in storage.list_files():
+        path, file = os.path.split(parse.unquote(f.path))
+        if group_id in path:
+            if file == file_name:
+                p = parse.unquote(f.path).split("/")
+                index = p.index("images")
+                storage.delete("/".join(p[index:]))
 
 
 def stream_group_message(message):
