@@ -1,6 +1,7 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -32,7 +33,7 @@ public class JoinActivity extends AppCompatActivity implements ZXingScannerView.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_join);
-        mAuth.getInstance();
+        mAuth =FirebaseAuth.getInstance();
         zXingScannerView = new ZXingScannerView(getApplicationContext());
         setContentView(zXingScannerView);
         zXingScannerView.setResultHandler(this);
@@ -56,7 +57,8 @@ public class JoinActivity extends AppCompatActivity implements ZXingScannerView.
     public void handleResult(Result result) {
         Toast.makeText(this, result.getText(), Toast.LENGTH_LONG).show();
         sendPost(result.getText());
-        zXingScannerView.resumeCameraPreview(JoinActivity.this);
+        zXingScannerView.stopCamera();
+        JoinActivity.this.startActivity(new Intent(JoinActivity.this, MainActivity.class));
     }
 
 
@@ -66,7 +68,7 @@ public class JoinActivity extends AppCompatActivity implements ZXingScannerView.
             @Override
             public void run() {
                 try {
-                    URL url = new URL("http://0.0.0.0:8080/photoorganizer/api/v1.0/group/join");
+                    URL url = new URL("http://10.100.23.218:8080/photoorganizer/api/v1.0/group/join");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");

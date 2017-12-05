@@ -25,7 +25,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/emailLogin"
-            android:hint="email"
             android:layout_marginLeft="20dp"
             android:layout_marginBottom="20dp"
             android:layout_marginRight="20dp"
@@ -45,7 +44,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/passwordLogin"
-            android:hint="password"
             android:inputType="textPassword"
             android:layout_margin="20dp"/>
         <Button

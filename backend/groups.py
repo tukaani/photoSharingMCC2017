@@ -63,7 +63,7 @@ def update(group_id, user_id, user_token):
     token = str(uuid.uuid4())
     data = {"token": token}
 
-    active_token = database.child("photos").child(
+    active_token = database.child("groups").child(
         group_id).child("token").get().val()
     if user_token != active_token:
         raise Exception("Invalid one time token")
@@ -72,7 +72,7 @@ def update(group_id, user_id, user_token):
     user_group = database.child("users").child(user_id).child(
         "group").get().val()
     if user_group is not None:
-        end_time = database.child('photos').child(
+        end_time = database.child('groups').child(
             user_group).child('end_time').get().val()
         end = datetime.datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S.%f")
         if end > datetime.datetime.now():
@@ -84,17 +84,17 @@ def update(group_id, user_id, user_token):
     database.child("users").child(user_id).child("group").set(group_id)
 
     # Update one time token
-    database.child("photos").child(group_id).update(data)
+    database.child("groups").child(group_id).update(data)
 
     # Update members
-    members = database.child("photos").child(
+    members = database.child("groups").child(
         group_id).child("members").get().val()
 
     if user_id in members:
         raise Exception("user has already joined the group")
 
     members.append(user_id)
-    database.child("photos").child(
+    database.child("groups").child(
         group_id).child("members").set(members)
     return token
 

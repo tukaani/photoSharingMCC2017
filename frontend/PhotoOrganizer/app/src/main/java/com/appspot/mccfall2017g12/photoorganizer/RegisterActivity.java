@@ -27,7 +27,6 @@ public class RegisterActivity extends AppCompatActivity {
     private DatabaseReference mDatabase;
     private EditText mEmail;
     private EditText mPassword;
-    private EditText mPasswordConfirm;
     private Button mSubmit;
     private static final String TAG = "RegisterActivity";
     private EditText mUsername;
@@ -40,7 +39,6 @@ public class RegisterActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         mEmail = (EditText) findViewById(R.id.email);
         mPassword = (EditText) findViewById(R.id.password);
-        mPasswordConfirm = (EditText) findViewById(R.id.passwordconfirm);
         mSubmit = (Button) findViewById(R.id.submit);
         mUsername = (EditText) findViewById(R.id.username);
         mDatabase = FirebaseDatabase.getInstance().getReference();
@@ -50,7 +48,6 @@ public class RegisterActivity extends AppCompatActivity {
                 if (!mPassword.getText().toString().matches("") && !mEmail.getText().toString().matches("") && !mUsername.getText().toString().matches("")) {
                     if (mPassword.getText().toString().length() > 5) {
 
-                        if (mPassword.getText().toString().equals(mPasswordConfirm.getText().toString())) {
 
                             mAuth.createUserWithEmailAndPassword(mEmail.getText().toString(), mPassword.getText().toString())
                                     .addOnCompleteListener(RegisterActivity.this, new OnCompleteListener<AuthResult>() {
@@ -86,25 +83,13 @@ public class RegisterActivity extends AppCompatActivity {
                                         }
                                     });
 
-                        } else {
-                            mPassword.setText("");
-                            mPassword.setHint("Password");
-                            mPassword.setHintTextColor(Color.RED);
-                            mPassword.requestFocus();
-                            mPasswordConfirm.setText("");
-                            mPasswordConfirm.setHint("Repeat password");
-                            mPasswordConfirm.setHintTextColor(Color.RED);
-                            Toast.makeText(RegisterActivity.this, "Password does not match", Toast.LENGTH_SHORT).show();
-                        }
+
                     } else {
                         mPassword.setText("");
                         mPassword.setHint("Password");
                         mPassword.setHintTextColor(Color.RED);
                         mPassword.requestFocus();
-                        mPasswordConfirm.setText("");
-                        mPasswordConfirm.setHint("Repeat password");
-                        mPasswordConfirm.setHintTextColor(Color.RED);
-                        Toast.makeText(RegisterActivity.this, "Password lenght must have more than 5 characters", Toast.LENGTH_LONG).show();
+                        Toast.makeText(RegisterActivity.this, "Password must be longer than 5 characters", Toast.LENGTH_LONG).show();
                     }
                 }
                 else{

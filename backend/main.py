@@ -67,7 +67,7 @@ def join_group():
     """ Allow members to join a group """
     try:
         validate_authorization_header(request.headers)
-        is_authorized_user(request.headers['Authorization'])
+        #is_authorized_user(request.headers['Authorization'])
 
         content = request.get_json()
         validate_group_join_request(content=content)
