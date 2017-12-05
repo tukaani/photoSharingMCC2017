@@ -109,7 +109,7 @@ def delete(group_id, user_id):
             group_id).remove()
         for f in storage.list_files():
             path, file = os.path.split(parse.unquote(f.path))
-            print(parse.unquote(f.path))
+            # print(parse.unquote(f.path))
             if group_id in path:
                 p = parse.unquote(f.path).split("/")
                 index = p.index("images")
@@ -194,7 +194,7 @@ def get_download_url(group_id, user_token):
             if file_name != "":
                 p = parse.unquote(f.path).split("/")
                 index = p.index("images")
-                print("/".join(p[index:]))
+                # print("/".join(p[index:]))
                 storage.child("/".join(p[index:])
                               ).download("temp/" + file_name)
                 data = storage.child(
