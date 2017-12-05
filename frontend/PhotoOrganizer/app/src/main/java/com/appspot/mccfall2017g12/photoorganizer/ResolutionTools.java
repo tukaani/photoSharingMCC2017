@@ -22,23 +22,13 @@ public class ResolutionTools {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(filePath, options);
-        int a = Math.max(options.outWidth, options.outHeight);
-        int b = Math.min(options.outWidth, options.outHeight);
-        if (3 * a > 4 * b)
-            return ceiledDivision(3 * a, 4);
+        int w = options.outWidth;
+        if (w <= 640)
+            return 1;
+        else if (w <= 1280)
+            return 2;
         else
-            return b;
-    }
-
-    /**
-     * Returns correctly ceiled division of two integers
-     *
-     * @param p Dividend
-     * @param q Divisor
-     * @return ceil(p divided by q)
-     */
-    private static int ceiledDivision(int p, int q) {
-        return (p + q - 1) / q;
+            return 3;
     }
 
     public static int getResolution(String resolutionLevel) {

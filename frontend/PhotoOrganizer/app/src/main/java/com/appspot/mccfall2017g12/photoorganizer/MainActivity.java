@@ -31,13 +31,10 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
     static final int REQUEST_PHOTO = 1;
 
-    private File photoFile = null;
+    private volatile String photoFilename = null;
     private final FirebaseAuth mAuth;
     private final FirebaseDatabase mFirebaseDatabase;
     private final LocalDatabase mDatabase;
-
-    //TODO !
-    private static volatile PhotoSynchronizer synchronizer;
 
     // The BroadcastReceiver that tracks network connectivity changes.
     private NetworkChangeReceiver receiver = new NetworkChangeReceiver();
@@ -55,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
         // Register BroadcastReceiver to track network connection changes.
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         receiver = new NetworkChangeReceiver();
-        this.registerReceiver(receiver, filter);
+        getApplicationContext().registerReceiver(receiver, filter);
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
@@ -70,7 +67,9 @@ public class MainActivity extends AppCompatActivity {
             new MenuItem(R.string.takePhoto, R.drawable.ic_add_a_photo_black_24dp) {
                 @Override
                 public void launch(Context context) {
-                    takePhoto();
+                    if (User.get().canTakePhoto()) {
+                        takePhoto();
+                    }
                 }
             },
             new MenuItem(R.string.groups, R.drawable.ic_group_black_24dp) {
@@ -102,21 +101,33 @@ public class MainActivity extends AppCompatActivity {
                 menuItem.launch(MainActivity.this);
             }
         });
+    }
 
-        if (!PhotoSynchronizer.isListening) {
-            PhotoSynchronizer synchronizer = new PhotoSynchronizer(User.getGroupId(), this);
-            synchronizer.listen();
-            MainActivity.synchronizer = synchronizer;
-            PhotoSynchronizer.isListening = true;
-        }
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putString("photoFilename", this.photoFilename);
+
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        if (savedInstanceState == null)
+            return;
+
+        this.photoFilename = savedInstanceState.getString("photoFilename", null);
     }
 
     void takePhoto(){
         String filename = UUID.randomUUID().toString() + ".jpg";
 
-        this.photoFile = FileTools.get(filename);
+        this.photoFilename = filename;
+
+        File photoFile = FileTools.get(filename);
         Uri uri = FileProvider.getUriForFile(this,
-                BuildConfig.APPLICATION_ID + ".provider", this.photoFile);
+                BuildConfig.APPLICATION_ID + ".provider", photoFile);
 
         Intent takePhoto = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         takePhoto.putExtra(MediaStore.EXTRA_OUTPUT, uri);
@@ -128,26 +139,28 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_PHOTO && resultCode == RESULT_OK) {
-            final File photoFile = this.photoFile;
+            final File photoFile = FileTools.get(this.photoFilename);
             final String uid = mAuth.getCurrentUser().getUid();
 
             ThreadTools.EXECUTOR.execute(new Runnable() {
                 @Override
                 public void run() {
 
-                    Boolean isBarcode = hasBarcode(photoFile);
+                    String groupId = User.get().getGroupId();
+
+                    boolean keepOffline = hasBarcode(photoFile) || groupId == null;
 
                     Photo photo = new Photo();
-                    photo.author = User.getUsername();
+                    photo.author = User.get().getUserName();
 
-                    if(isBarcode) {
+                    if (keepOffline) {
                         photo.albumId = Album.PRIVATE_ALBUM_ID;
                         photo.photoId = UUID.randomUUID().toString();
                     }
                     else {
-                        photo.albumId = User.getGroupId();
+                        photo.albumId = groupId;
                         DatabaseReference photoRef = mFirebaseDatabase
-                                .getReference("photos").child(User.getGroupId()).push();
+                                .getReference("photos").child(groupId).push();
                         photoRef.child("author").setValue(uid);
                         photo.photoId = photoRef.getKey();
                     }
@@ -156,7 +169,9 @@ public class MainActivity extends AppCompatActivity {
                     mDatabase.galleryDao().tryUpdatePhotoFile(photo.photoId, photoFile.getName(),
                             ResolutionTools.calculateResolution(photoFile.getAbsolutePath()));
 
-                    synchronizer.uploadPhoto(photo.photoId);
+                    if (!keepOffline) {
+                        User.get().getSynchronizer().uploadPhoto(photo.photoId);
+                    }
                 }
             });
         }

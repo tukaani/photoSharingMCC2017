@@ -42,8 +42,9 @@
 
 
 <div class="container">
-    <h1 class="my-4 text-center text-lg-left">{{ session['group'] }}'s Gallery</h1>
+    <h1 class="my-4 text-center text-lg-left">Gallery</h1>
     <div class="row text-center text-lg-left">
+    {% if files %}
         {% for file in files%}
         <div class="col-lg-3 col-md-4 col-xs-6">
             <a href="#" class="d-block mb-4 h-100">
@@ -52,6 +53,9 @@
             </a>
         </div>
         {% endfor %}
+    {% else %}
+    <h4 class="my-4 text-center text-lg-left">No Photos Available </h4>
+    {% endif %}
     </div>
 </div>
 

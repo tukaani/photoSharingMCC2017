@@ -42,23 +42,5 @@ public class GalleryActivity extends AppCompatActivity {
         this.recyclerView.setLayoutManager(layoutManager);
 
         this.adapter.setLiveData(database.galleryDao().loadAllAlbums());
-
-        //TODO Remove
-        {
-            final Album album1 = new Album();
-            album1.albumId = Album.PRIVATE_ALBUM_ID;
-            album1.name = "Private";
-
-            final Album album2 = new Album();
-            album2.albumId = User.getGroupId();
-            album2.name = "Happy Hour";
-
-            ThreadTools.EXECUTOR.execute(new Runnable() {
-                @Override
-                public void run() {
-                    database.galleryDao().insertAlbums(album1, album2);
-                }
-            });
-        }
     }
 }
