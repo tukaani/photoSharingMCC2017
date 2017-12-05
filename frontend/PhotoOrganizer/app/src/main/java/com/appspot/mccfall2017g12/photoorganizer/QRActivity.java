@@ -8,6 +8,7 @@ import android.widget.ImageView;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.zxing.BarcodeFormat;
@@ -18,7 +19,30 @@ import com.google.zxing.common.BitMatrix;
 public class QRActivity extends AppCompatActivity {
 
     private static final int QR_SIZE = 100;
+    private final ValueEventListener listener;
+    private final DatabaseReference reference;
+
     private ImageView qrView;
+
+    public QRActivity() {
+        final String groupId = User.get().getGroupId();
+
+        reference = FirebaseDatabase.getInstance()
+                .getReference("groups")
+                .child(groupId)
+                .child("token");
+
+        listener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                String token = dataSnapshot.getValue(String.class);
+                qrView.setImageBitmap(encodeAsBitmap(groupId + " " + token));
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) { }
+        };
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,23 +50,18 @@ public class QRActivity extends AppCompatActivity {
         setContentView(R.layout.activity_qr);
 
         qrView = findViewById(R.id.qr_image);
+    }
 
-        final String groupId = User.get().getGroupId();
+    @Override
+    protected void onStart() {
+        super.onStart();
+        reference.addValueEventListener(listener);
+    }
 
-        FirebaseDatabase.getInstance()
-                .getReference("groups")
-                .child(groupId)
-                .child("token")
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        String token = dataSnapshot.getValue(String.class);
-                        qrView.setImageBitmap(encodeAsBitmap(groupId + " " + token));
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) { }
-                });
+    @Override
+    protected void onStop() {
+        reference.removeEventListener(listener);
+        super.onStop();
     }
 
     Bitmap encodeAsBitmap(String str) {

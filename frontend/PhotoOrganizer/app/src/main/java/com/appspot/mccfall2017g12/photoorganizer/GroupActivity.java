@@ -20,10 +20,23 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 public class GroupActivity extends AppCompatActivity {
+
+    private MemberAdapter memberAdapter;
+    private RecyclerView recyclerView;
+    private final DatabaseReference membersReference;
+    private final DatabaseReference usersReference;
+    private final FirebaseDatabase firebaseDatabase;
+
+    public GroupActivity()
+    {
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        usersReference = firebaseDatabase.getReference("users");
+        membersReference = firebaseDatabase.getReference("groups")
+                .child(User.get().getGroupId())
+                .child("members");
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,66 +51,29 @@ public class GroupActivity extends AppCompatActivity {
             }
         });
 
-        RecyclerView recyclerView = findViewById(R.id.recyclerView);
-
+        recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+    }
 
-        final MemberAdapter memberAdapter = new MemberAdapter();
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        memberAdapter = new MemberAdapter();
 
         recyclerView.setAdapter(memberAdapter);
+        membersReference.addChildEventListener(memberAdapter);
+    }
 
-        final DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users");
+    @Override
+    protected void onStop() {
+        super.onStop();
 
-        FirebaseDatabase.getInstance().getReference("groups")
-                .child(User.get().getGroupId())
-                .child("members").addChildEventListener(new ChildEventListener() {
+        membersReference.removeEventListener(memberAdapter);
+        recyclerView.setAdapter(null);
 
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                final String userId = dataSnapshot.getValue(String.class);
-                usersRef.child(userId).child("username").addListenerForSingleValueEvent(
-                        new ValueEventListener() {
-
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Member member = new Member();
-                        member.username = dataSnapshot.getValue(String.class);
-                        member.userId = userId;
-
-                        memberAdapter.members.add(member);
-                        memberAdapter.notifyItemInserted(memberAdapter.members.size() - 1);
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) { }
-                });
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) { }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-                String userId = dataSnapshot.getValue(String.class);
-
-                int i = 0;
-                for (Member member : memberAdapter.members) {
-                    if (TextUtils.equals(member.userId, userId))
-                        break;
-                    i++;
-                }
-
-                memberAdapter.members.remove(i);
-                memberAdapter.notifyItemRemoved(i);
-            }
-
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) { }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) { }
-        });
+        memberAdapter = null;
     }
 
     private class Member implements Diffable<Member> {
@@ -115,7 +91,8 @@ public class GroupActivity extends AppCompatActivity {
         }
     }
 
-    private class MemberAdapter extends RecyclerView.Adapter<MemberViewHolder> {
+    private class MemberAdapter extends RecyclerView.Adapter<MemberViewHolder>
+            implements ChildEventListener {
 
         private List<Member> members = new ArrayList<>();
 
@@ -137,6 +114,51 @@ public class GroupActivity extends AppCompatActivity {
                     .inflate(R.layout.layout_member, parent, false);
             return new MemberViewHolder(view);
         }
+
+        @Override
+        public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+            final String userId = dataSnapshot.getValue(String.class);
+            usersReference.child(userId).child("username").addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            Member member = new Member();
+                            member.username = dataSnapshot.getValue(String.class);
+                            member.userId = userId;
+
+                            members.add(member);
+                            notifyItemInserted(members.size() - 1);
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) { }
+                    });
+        }
+
+        @Override
+        public void onChildChanged(DataSnapshot dataSnapshot, String s) { }
+
+        @Override
+        public void onChildRemoved(DataSnapshot dataSnapshot) {
+            String userId = dataSnapshot.getValue(String.class);
+
+            int i = 0;
+            for (Member member : members) {
+                if (TextUtils.equals(member.userId, userId))
+                    break;
+                i++;
+            }
+
+            members.remove(i);
+            notifyItemRemoved(i);
+        }
+
+        @Override
+        public void onChildMoved(DataSnapshot dataSnapshot, String s) { }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) { }
     }
 
     private class MemberViewHolder extends RecyclerView.ViewHolder {
