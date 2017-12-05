@@ -55,7 +55,8 @@ public class JoinActivity extends AppCompatActivity implements ZXingScannerView.
 
     @Override
     public void handleResult(Result result) {
-        Toast.makeText(this, result.getText(), Toast.LENGTH_LONG).show();
+
+
         sendPost(result.getText());
         zXingScannerView.stopCamera();
         JoinActivity.this.startActivity(new Intent(JoinActivity.this, MainActivity.class));
@@ -72,7 +73,7 @@ public class JoinActivity extends AppCompatActivity implements ZXingScannerView.
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
-                    conn.setRequestProperty("Authorization", mAuth.getCurrentUser().getUid());
+                    conn.setRequestProperty("Authorization","" );//User.get().getIdtoken());
                     conn.setDoOutput(true);
                     conn.setDoInput(true);
 
@@ -91,17 +92,6 @@ public class JoinActivity extends AppCompatActivity implements ZXingScannerView.
                     os.close();
 
 
-                    int responseCode = conn.getResponseCode();
-
-                    if (responseCode == HttpURLConnection.HTTP_OK) {
-                        BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                        StringBuilder sb = new StringBuilder();
-                        String line;
-                        while ((line = br.readLine()) != null) {
-                            sb.append(line + "\n");
-                        }
-
-                    }
                     conn.disconnect();
                 } catch (Exception e) {
                     e.printStackTrace();

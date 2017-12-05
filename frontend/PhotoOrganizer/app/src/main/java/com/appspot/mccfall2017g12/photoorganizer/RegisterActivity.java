@@ -59,7 +59,7 @@ public class RegisterActivity extends AppCompatActivity {
                                                 Log.d(TAG, "createUserWithEmail:success");
                                                 FirebaseUser user = mAuth.getCurrentUser();
                                                 mDatabase.child("users").child(user.getUid()).child("username").setValue(mUsername.getText().toString());
-                                                Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                                                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
                                                 startActivity(intent);
 
                                             } else {

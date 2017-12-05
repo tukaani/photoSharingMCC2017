@@ -7,6 +7,9 @@ import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -34,6 +37,7 @@ public class User {
     private final String userId;
     private String userName;
     private String groupId;
+    private String Idtoken;
     private PhotoSynchronizer synchronizer;
     private int state = 0;
     private final LocalDatabase database;
@@ -67,6 +71,13 @@ public class User {
         });
 
         DatabaseReference userRef = firebaseDatabase.getReference("users").child(userId);
+
+        FirebaseAuth.getInstance().getCurrentUser().getIdToken(true).addOnSuccessListener(new OnSuccessListener<GetTokenResult>() {
+            @Override
+            public void onSuccess(GetTokenResult getTokenResult) {
+              Idtoken = getTokenResult.getToken();
+            }
+        });
 
         userRef.child("username").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -227,5 +238,9 @@ public class User {
             user.setGroupId(null);
 
         user = null;
+    }
+
+    public String getIdtoken() {
+        return Idtoken;
     }
 }
