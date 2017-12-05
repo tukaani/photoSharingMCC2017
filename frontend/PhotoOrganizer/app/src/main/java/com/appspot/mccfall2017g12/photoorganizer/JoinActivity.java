@@ -73,7 +73,7 @@ public class JoinActivity extends AppCompatActivity implements ZXingScannerView.
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
-                    conn.setRequestProperty("Authorization","" );//User.get().getIdtoken());
+                    conn.setRequestProperty("Authorization",    User.get().getIdtoken() );//User.get().getIdtoken());
                     conn.setDoOutput(true);
                     conn.setDoInput(true);
 
