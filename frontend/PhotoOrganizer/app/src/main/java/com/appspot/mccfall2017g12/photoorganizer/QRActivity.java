@@ -36,7 +36,9 @@ public class QRActivity extends AppCompatActivity {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 String token = dataSnapshot.getValue(String.class);
-                qrView.setImageBitmap(encodeAsBitmap(groupId + " " + token));
+                Bitmap bitmap = encodeAsBitmap(groupId + " " + token);
+                qrView.setImageBitmap(Bitmap.createScaledBitmap(bitmap,
+                        qrView.getWidth(), qrView.getHeight(), false));
             }
 
             @Override
