@@ -143,9 +143,9 @@ def batch_delete(group):
         else:
             print(group + " Ĝroup validity Expired ... Housekeeping(daemon) begins...")
             members = database.child("groups").child(
-            group).child("members").get().val()
+                group).child("members").get().val()
             for member in members:
-                 database.child("users").child(member).child("group").remove()
+                database.child("users").child(member).child("group").remove()
             for f in storage.list_files():
                 path, file = os.path.split(parse.unquote(f.path))
                 if group in path:
@@ -187,7 +187,6 @@ def retrieve_user_photos(group_id):
 
 def get_download_url(group_id, user_token):
     """ Get Firebase Download URL"""
-    # shit load of crapy operations performed here. think about restructure the schema.
     urls = []
     for f in storage.list_files():
         path, file_name = os.path.split(parse.unquote(f.path))
@@ -196,7 +195,8 @@ def get_download_url(group_id, user_token):
                 p = parse.unquote(f.path).split("/")
                 index = p.index("images")
                 print("/".join(p[index:]))
-                storage.child("/".join(p[index:])).download("temp/" + file_name)
+                storage.child("/".join(p[index:])
+                              ).download("temp/" + file_name)
                 data = storage.child(
                     "/".join(p[index:])).put("temp/" + file_name, token=user_token)
                 download_url = storage.child(
