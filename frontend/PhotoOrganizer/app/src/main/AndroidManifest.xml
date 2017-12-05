@@ -53,8 +53,9 @@
                 <action android:name="android.net.wifi.WIFI_STATE_CHANGED" />
             </intent-filter>
         </receiver>
-
+        
         <activity android:name=".JoinActivity"></activity>
+        <activity android:name=".GroupActivity"></activity>
     </application>
 
 </manifest>
