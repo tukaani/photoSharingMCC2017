@@ -14,11 +14,8 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
-<<<<<<< HEAD
 import java.io.IOException;
 import java.io.InputStream;
-=======
->>>>>>> a0a59a6a009ee09d00df636f914cfd5094ee1d00
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -62,11 +59,9 @@ public class JoinActivity extends UserSensitiveActivity
         zXingScannerView.stopCamera();
 
         sendPost(result.getText(), JoinActivity.this);
-<<<<<<< HEAD
-=======
+
         zXingScannerView.stopCamera();
         returnToMainActivity();
->>>>>>> a0a59a6a009ee09d00df636f914cfd5094ee1d00
     }
 
     @Override
