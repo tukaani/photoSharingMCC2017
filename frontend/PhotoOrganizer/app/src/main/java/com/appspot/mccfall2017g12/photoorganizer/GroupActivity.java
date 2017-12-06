@@ -28,7 +28,6 @@ public class GroupActivity extends UserSensitiveActivity {
     private RecyclerView recyclerView;
     private final DatabaseReference membersReference;
     private final DatabaseReference usersReference;
-    private final FirebaseDatabase firebaseDatabase;
 
     public GroupActivity()
     {
@@ -48,14 +47,14 @@ public class GroupActivity extends UserSensitiveActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group);
-<<<<<<< HEAD
+
         firebaseDatabase = FirebaseDatabase.getInstance();
         mGroup = (TextView) findViewById(R.id.textView3);
         mGroup.setText(User.get().getGroupName());
         mExpiration = (TextView) findViewById(R.id.textView5);
         mExpiration.setText(User.get().getExpirationDate());
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
-=======
+
 
         findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -64,7 +63,6 @@ public class GroupActivity extends UserSensitiveActivity {
                 startActivity(intent);
             }
         });
->>>>>>> a0a59a6a009ee09d00df636f914cfd5094ee1d00
 
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setHasFixedSize(true);
