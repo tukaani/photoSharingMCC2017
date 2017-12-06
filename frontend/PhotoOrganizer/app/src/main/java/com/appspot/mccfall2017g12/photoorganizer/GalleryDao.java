@@ -78,6 +78,9 @@ public abstract class GalleryDao {
     @Delete
     public abstract void deletePhotos(Photo... photos);
 
+    @Query("SELECT name FROM Album WHERE albumId = :albumId")
+    public abstract String getAlbumName(String albumId);
+
     @Transaction
     @Query("SELECT photoId FROM Photo WHERE albumId = :albumId AND "
             + "resolution_online > resolution_local AND resolution_local < :maxResolution")

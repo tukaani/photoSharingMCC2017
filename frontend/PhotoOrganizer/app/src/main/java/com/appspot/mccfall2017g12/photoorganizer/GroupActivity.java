@@ -1,6 +1,6 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
-import android.support.v7.app.AppCompatActivity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -21,10 +21,23 @@ import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
-public class GroupActivity extends AppCompatActivity {
+public class GroupActivity extends UserSensitiveActivity {
+
+    private MemberAdapter memberAdapter;
+    private RecyclerView recyclerView;
+    private final DatabaseReference membersReference;
+    private final DatabaseReference usersReference;
+    private final FirebaseDatabase firebaseDatabase;
+
+    public GroupActivity()
+    {
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        usersReference = firebaseDatabase.getReference("users");
+        membersReference = firebaseDatabase.getReference("groups")
+                .child(User.get().getGroupId())
+                .child("members");
+    }
 
     private FirebaseDatabase firebaseDatabase;
     private TextView mGroup;
@@ -35,71 +48,52 @@ public class GroupActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group);
+<<<<<<< HEAD
         firebaseDatabase = FirebaseDatabase.getInstance();
         mGroup = (TextView) findViewById(R.id.textView3);
         mGroup.setText(User.get().getGroupName());
         mExpiration = (TextView) findViewById(R.id.textView5);
         mExpiration.setText(User.get().getExpirationDate());
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
+=======
 
+        findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(GroupActivity.this, QRActivity.class);
+                startActivity(intent);
+            }
+        });
+>>>>>>> a0a59a6a009ee09d00df636f914cfd5094ee1d00
+
+        recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+    }
 
-        final MemberAdapter memberAdapter = new MemberAdapter();
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        memberAdapter = new MemberAdapter();
 
         recyclerView.setAdapter(memberAdapter);
+        membersReference.addChildEventListener(memberAdapter);
+    }
 
-        final DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users");
+    @Override
+    protected void onStop() {
+        super.onStop();
 
-        FirebaseDatabase.getInstance().getReference("groups")
-                .child(User.get().getGroupId())
-                .child("members").addChildEventListener(new ChildEventListener() {
+        membersReference.removeEventListener(memberAdapter);
+        recyclerView.setAdapter(null);
 
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                final String userId = dataSnapshot.getValue(String.class);
-                usersRef.child(userId).child("username").addListenerForSingleValueEvent(
-                        new ValueEventListener() {
+        memberAdapter = null;
+    }
 
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Member member = new Member();
-                        member.username = dataSnapshot.getValue(String.class);
-                        member.userId = userId;
-
-                        memberAdapter.members.add(member);
-                        memberAdapter.notifyItemInserted(memberAdapter.members.size() - 1);
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) { }
-                });
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) { }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-                String userId = dataSnapshot.getValue(String.class);
-
-                int i = 0;
-                for (Member member : memberAdapter.members) {
-                    if (TextUtils.equals(member.userId, userId))
-                        break;
-                    i++;
-                }
-
-                memberAdapter.members.remove(i);
-                memberAdapter.notifyItemRemoved(i);
-            }
-
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) { }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) { }
-        });
+    @Override
+    protected boolean shouldGoOn() {
+        return User.get().isInGroup();
     }
 
     private class Member implements Diffable<Member> {
@@ -117,7 +111,8 @@ public class GroupActivity extends AppCompatActivity {
         }
     }
 
-    private class MemberAdapter extends RecyclerView.Adapter<MemberViewHolder> {
+    private class MemberAdapter extends RecyclerView.Adapter<MemberViewHolder>
+            implements ChildEventListener {
 
         private List<Member> members = new ArrayList<>();
 
@@ -139,6 +134,51 @@ public class GroupActivity extends AppCompatActivity {
                     .inflate(R.layout.layout_member, parent, false);
             return new MemberViewHolder(view);
         }
+
+        @Override
+        public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+            final String userId = dataSnapshot.getValue(String.class);
+            usersReference.child(userId).child("username").addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            Member member = new Member();
+                            member.username = dataSnapshot.getValue(String.class);
+                            member.userId = userId;
+
+                            members.add(member);
+                            notifyItemInserted(members.size() - 1);
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) { }
+                    });
+        }
+
+        @Override
+        public void onChildChanged(DataSnapshot dataSnapshot, String s) { }
+
+        @Override
+        public void onChildRemoved(DataSnapshot dataSnapshot) {
+            String userId = dataSnapshot.getValue(String.class);
+
+            int i = 0;
+            for (Member member : members) {
+                if (TextUtils.equals(member.userId, userId))
+                    break;
+                i++;
+            }
+
+            members.remove(i);
+            notifyItemRemoved(i);
+        }
+
+        @Override
+        public void onChildMoved(DataSnapshot dataSnapshot, String s) { }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) { }
     }
 
     private class MemberViewHolder extends RecyclerView.ViewHolder {

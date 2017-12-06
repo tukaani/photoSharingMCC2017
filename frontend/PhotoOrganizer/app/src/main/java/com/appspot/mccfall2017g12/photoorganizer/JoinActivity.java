@@ -1,9 +1,6 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
-import android.app.AlertDialog;
 import android.content.Intent;
-import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -15,20 +12,22 @@ import com.google.zxing.Result;
 
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+<<<<<<< HEAD
 import java.io.IOException;
 import java.io.InputStream;
+=======
+>>>>>>> a0a59a6a009ee09d00df636f914cfd5094ee1d00
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 import okhttp3.Response;
 
-public class JoinActivity extends AppCompatActivity implements ZXingScannerView.ResultHandler {
+public class JoinActivity extends UserSensitiveActivity
+        implements ZXingScannerView.ResultHandler {
 
     private ZXingScannerView zXingScannerView;
     private FirebaseAuth mAuth;
@@ -63,9 +62,17 @@ public class JoinActivity extends AppCompatActivity implements ZXingScannerView.
         zXingScannerView.stopCamera();
 
         sendPost(result.getText(), JoinActivity.this);
+<<<<<<< HEAD
+=======
+        zXingScannerView.stopCamera();
+        returnToMainActivity();
+>>>>>>> a0a59a6a009ee09d00df636f914cfd5094ee1d00
     }
 
-
+    @Override
+    protected boolean shouldGoOn() {
+        return !User.get().isInGroup();
+    }
 
     public void sendPost(final String qr, final JoinActivity joinActivity) {
 

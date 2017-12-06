@@ -19,7 +19,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity" />
+        <activity android:name=".MainActivity"
+            android:parentActivityName=".LoginActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".LoginActivity" />
+        </activity>
         <activity android:name=".LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,9 +32,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AlbumActivity" />
+        <activity android:name=".AlbumActivity"
+            android:parentActivityName=".GalleryActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".GalleryActivity" />
+        </activity>
         <activity android:name=".SettingsActivity" />
-        <activity android:name=".GalleryActivity" />
+        <activity android:name=".GalleryActivity"
+            android:parentActivityName=".MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" />
+        </activity>
         <activity android:name=".GroupManagementActivity" />
         <activity android:name=".CreateGroupActivity" />
 
@@ -53,9 +68,10 @@
                 <action android:name="android.net.wifi.WIFI_STATE_CHANGED" />
             </intent-filter>
         </receiver>
-        
-        <activity android:name=".JoinActivity"></activity>
-        <activity android:name=".GroupActivity"></activity>
+
+        <activity android:name=".JoinActivity" />
+        <activity android:name=".GroupActivity" />
+        <activity android:name=".QRActivity"></activity>
     </application>
 
 </manifest>
