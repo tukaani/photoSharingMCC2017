@@ -37,6 +37,8 @@ public class AlbumActivity extends AppCompatActivity {
         else
             throw new IllegalArgumentException("Album key missing.");
 
+        Notifier.getInstance().cancel(this.albumId, getApplicationContext());
+
         database = LocalDatabase.getInstance(this);
 
         this.recyclerView = findViewById(R.id.photos_recycler_view);
