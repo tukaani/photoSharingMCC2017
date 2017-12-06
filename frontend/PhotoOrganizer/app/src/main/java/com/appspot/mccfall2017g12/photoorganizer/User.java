@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
  * Created by Edgar on 27/11/2017.
  */
 
-public class User {
+public class User extends Observable {
 
     private static final String TAG = "user";
 
@@ -35,6 +35,7 @@ public class User {
     private static User user;
 
     private final String userId;
+    private final DatabaseReference userRef;
     private String userName;
     private String groupId;
     private String Idtoken;
@@ -45,16 +46,34 @@ public class User {
     private final Object lock = new Object();
     private final Executor executor;
     private final PhotoSynchronizer.Factory synchronizerFactory;
+    private final ValueEventListener groupListener;
 
     private User(String userId, final Context context) {
         this.userId = userId;
         this.firebaseDatabase = FirebaseDatabase.getInstance();
         this.database = LocalDatabase.getInstance(context);
         this.executor = ThreadTools.EXECUTOR;
+        this.userRef = firebaseDatabase.getReference("users").child(userId);
+
         this.synchronizerFactory = new PhotoSynchronizer.Factory() {
             @Override
             public PhotoSynchronizer create(String groupId) {
                 return new PhotoSynchronizer(groupId, context);
+            }
+        };
+
+        this.groupListener = new AsyncValueEventListener(executor) {
+
+            @Override
+            @WorkerThread
+            public void onDataChangeAsync(DataSnapshot dataSnapshot) {
+                setGroupId(dataSnapshot.getValue(String.class));
+            }
+
+            @Override
+            @WorkerThread
+            public void onCancelledAsync(DatabaseError databaseError) {
+                setGroupId(null);
             }
         };
 
@@ -70,9 +89,8 @@ public class User {
             }
         });
 
-        DatabaseReference userRef = firebaseDatabase.getReference("users").child(userId);
-
-        FirebaseAuth.getInstance().getCurrentUser().getIdToken(true).addOnSuccessListener(new OnSuccessListener<GetTokenResult>() {
+        FirebaseAuth.getInstance().getCurrentUser().getIdToken(true)
+                .addOnSuccessListener(new OnSuccessListener<GetTokenResult>() {
             @Override
             public void onSuccess(GetTokenResult getTokenResult) {
               Idtoken = getTokenResult.getToken();
@@ -91,20 +109,12 @@ public class User {
             }
         });
 
-        userRef.child("group").addValueEventListener(new AsyncValueEventListener(executor) {
+        userRef.child("group").addValueEventListener(groupListener);
+    }
 
-            @Override
-            @WorkerThread
-            public void onDataChangeAsync(DataSnapshot dataSnapshot) {
-                setGroupId(dataSnapshot.getValue(String.class));
-            }
-
-            @Override
-            @WorkerThread
-            public void onCancelledAsync(DatabaseError databaseError) {
-                setGroupId(null);
-            }
-        });
+    private void stop() {
+        userRef.child("group").removeEventListener(groupListener);
+        user.setGroupId(null);
     }
 
     @WorkerThread
@@ -194,6 +204,12 @@ public class User {
         }
     }
 
+    public boolean isInGroup() {
+        synchronized (lock) {
+            return getState(STATE_IN_GROUP);
+        }
+    }
+
     private boolean getState(int flag) {
         synchronized (lock) {
             return (state & flag) > 0;
@@ -201,11 +217,18 @@ public class User {
     }
 
     private void setState(int flag, boolean value) {
+        boolean changed;
         synchronized (lock) {
+            int oldState = state;
             if (value)
                 state |= flag;
             else
                 state &= ~flag;
+            changed = (state != oldState);
+        }
+        if (changed) {
+            setChanged();
+            notifyObservers();
         }
     }
 
@@ -227,7 +250,7 @@ public class User {
 
     public static synchronized void set(@NonNull String userId, Context context) {
         if (user != null) {
-            throw new IllegalStateException();
+            user.stop();
         }
 
         user = new User(userId, context);
@@ -235,7 +258,7 @@ public class User {
 
     public static synchronized void end() {
         if (user != null)
-            user.setGroupId(null);
+            user.stop();
 
         user = null;
     }

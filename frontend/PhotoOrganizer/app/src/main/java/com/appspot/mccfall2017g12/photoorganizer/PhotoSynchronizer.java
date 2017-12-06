@@ -56,6 +56,8 @@ public class PhotoSynchronizer {
     private final FirebaseStorage firebaseStorage;
     private final PhotoEventListener photoEventListener;
     private final DatabaseReference groupReference;
+    private final Context context;
+    private final Notifier notifier;
 
     public PhotoSynchronizer(String groupId, Context context) {
         this.groupId = groupId;
@@ -67,6 +69,8 @@ public class PhotoSynchronizer {
         this.firebaseStorage = FirebaseStorage.getInstance();
         this.photoEventListener = new PhotoEventListener();
         this.groupReference = this.firebaseDatabase.getReference("photos").child(groupId);
+        this.context = context;
+        this.notifier = Notifier.getInstance();
     }
 
     public interface Factory {
@@ -170,6 +174,7 @@ public class PhotoSynchronizer {
                 photo.resolution.local = -1;
                 database.galleryDao().insertPhotos(photo);
                 fetchAndSetAuthorNameForPhotoAsync(dataSnapshot);
+                notifier.notifyAddPhoto(groupId, context);
             }
 
             updatePhoto(dataSnapshot);

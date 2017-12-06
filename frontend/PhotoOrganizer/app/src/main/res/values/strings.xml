@@ -36,4 +36,7 @@
 
     <string name="groupstitle">Fill in the group information</string>
     <string name="groupname">Name of the group</string>
+    <string name="unknown_album">unknown album</string>
+    <string name="new_photos_text">There are %d new photo(s) in &quot;%s&quot;</string>
+    <string name="new_photos">New photos</string>
 </resources>
