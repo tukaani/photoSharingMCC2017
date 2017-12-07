@@ -16,7 +16,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
@@ -32,7 +31,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -40,12 +38,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 
 public class PhotoSynchronizer {
+
+    private static final int SCHEDULE_PERIOD = 30*1000; // 30 seconds
 
     //TODO Should be calculated based on network state & settings
     //private final static String CURRENT_RESOLUTION_LEVEL = ResolutionTools.LEVEL_FULL;
@@ -61,6 +62,7 @@ public class PhotoSynchronizer {
     private final DatabaseReference groupReference;
     private final Context context;
     private final Notifier notifier;
+    private final Timer timer;
 
     public PhotoSynchronizer(String groupId, Context context) {
         this.groupId = groupId;
@@ -74,6 +76,7 @@ public class PhotoSynchronizer {
         this.groupReference = this.firebaseDatabase.getReference("photos").child(groupId);
         this.context = context;
         this.notifier = Notifier.getInstance();
+        this.timer = new Timer();
         //this.CURRENT_RESOLUTION_LEVEL;// = getCurrentResolution();
 
     }
@@ -84,10 +87,20 @@ public class PhotoSynchronizer {
 
     public void listen() {
         groupReference.addChildEventListener(photoEventListener);
+
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                downloadAllImprovablePhotos();
+                uploadAllImprovablePhotos();
+            }
+        }, 0, SCHEDULE_PERIOD);
     }
 
     public void stop() {
         groupReference.removeEventListener(photoEventListener);
+
+        timer.cancel();
     }
 
     public void uploadPhoto(final String photoId) {
@@ -115,9 +128,8 @@ public class PhotoSynchronizer {
 
             return changeResolutionFormat(settings.get("pref_imgQuality_mobile").toString());
         } else {
-            // TODO: How to handle??
-            Toast.makeText(context, "No connection", Toast.LENGTH_SHORT).show();
-            return "";
+            // use wifi setting if no connection, it doesn't matter
+            return changeResolutionFormat(settings.get("pref_imgQuality_wifi").toString());
         }
 
 
@@ -137,9 +149,10 @@ public class PhotoSynchronizer {
     // This should be called when network/settings change.
     @WorkerThread
     public void downloadAllImprovablePhotos() {
-        getCurrentResolution();
+        int maxResolution = ResolutionTools.getResolution(getCurrentResolution());
+
         final String[] photoIds = database.galleryDao().loadPhotosWithHigherOnlineResolution(
-                groupId, ResolutionTools.getResolution(getCurrentResolution()));
+                groupId, maxResolution);
 
         for (final String photoId : photoIds) {
             if (shouldDownload(photoId)) {
@@ -156,9 +169,10 @@ public class PhotoSynchronizer {
     // This should be called when network/settings change.
     @WorkerThread
     public void uploadAllImprovablePhotos() {
-        getCurrentResolution();
+        int maxResolution = ResolutionTools.getResolution(getCurrentResolution());
+
         final String[] photoIds = database.galleryDao().loadPhotosWithHigherLocalResolution(
-                groupId, ResolutionTools.getResolution(getCurrentResolution()));
+                groupId, maxResolution);
 
         for (final String photoId : photoIds) {
             if (shouldUpload(photoId)) {

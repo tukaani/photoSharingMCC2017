@@ -4,8 +4,8 @@ import android.graphics.BitmapFactory;
 
 public class ResolutionTools {
 
-    public final static int RESOLUTION_LOW = 480;
-    public final static int RESOLUTION_HIGH = 960;
+    public final static int RESOLUTION_LOW = 1;
+    public final static int RESOLUTION_HIGH = 2;
 
     public static final String LEVEL_LOW = "low";
     public static final String LEVEL_HIGH = "high";
