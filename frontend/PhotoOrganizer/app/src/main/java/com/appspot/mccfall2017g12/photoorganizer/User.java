@@ -286,7 +286,7 @@ public class User extends Observable {
         }
     }
 
-    public static synchronized User get(Context context) {
+    public static synchronized User get() {
         return user;
     }
 
