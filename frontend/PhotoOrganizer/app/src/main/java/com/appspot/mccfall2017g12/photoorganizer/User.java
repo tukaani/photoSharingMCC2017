@@ -165,7 +165,7 @@ public class User extends Observable {
                         synchronized (lock) {
                             groupName = dataSnapshot.child("name").getValue(String.class);
                             expirationDate = dataSnapshot.child("end_time").getValue(String.class);
-                            author = dataSnapshot.child("author").getValue(String.class);
+                            author = dataSnapshot.child("creator").getValue(String.class);
                             setState(STATE_GROUP_OK, true);
                         }
 
