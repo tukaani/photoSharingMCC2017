@@ -138,7 +138,7 @@ def housekeeper_cron():
 
 
 def batch_delete(group):
-    """ Delete InActive Groups"""
+    """ Delete Inactive Groups"""
     try:
         end_time = database.child('groups').child(
             group).child('end_time').get().val()
@@ -147,6 +147,7 @@ def batch_delete(group):
             print(group + " Group is valid..")
         else:
             print(group + " Ĝroup validity Expired ... Housekeeping(daemon) begins...")
+            database.child("photos").child(group).remove()
             members = database.child("groups").child(
                 group).child("members").get().val()
             for member in members:
