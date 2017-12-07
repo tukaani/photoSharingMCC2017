@@ -36,9 +36,6 @@ public class MainActivity extends UserSensitiveActivity {
     private final FirebaseDatabase mFirebaseDatabase;
     private final LocalDatabase mDatabase;
 
-    // The BroadcastReceiver that tracks network connectivity changes.
-    private NetworkChangeReceiver receiver = new NetworkChangeReceiver();
-
     public MainActivity() {
         mAuth = FirebaseAuth.getInstance();
         mFirebaseDatabase = FirebaseDatabase.getInstance();
@@ -49,10 +46,6 @@ public class MainActivity extends UserSensitiveActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        // Register BroadcastReceiver to track network connection changes.
-        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        receiver = new NetworkChangeReceiver();
-        getApplicationContext().registerReceiver(receiver, filter);
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 

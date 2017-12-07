@@ -30,7 +30,7 @@ public abstract class UserSensitiveActivity extends AppCompatActivity {
 
         Context context = getApplicationContext();
 
-        user = User.get(context);
+        user = User.get();
 
         if (user == null) {
 
