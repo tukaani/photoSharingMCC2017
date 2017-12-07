@@ -1,20 +1,21 @@
 package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Intent;
+import android.support.annotation.MainThread;
 import android.support.v7.app.AppCompatActivity;
 
 import java.util.Observable;
-import java.util.Observer;
 
 /**
  * Activity that observes the state of the user.
  * When the state changes (e.g. the user no longer belongs to a group),
  * calls shouldGoOn() method. If that returns false, goes back to the main activity.
  */
-public class UserSensitiveActivity extends AppCompatActivity {
+public abstract class UserSensitiveActivity extends AppCompatActivity {
 
     private UserStateObserver observer = new UserStateObserver();
 
+    @MainThread
     protected void returnToMainActivity() {
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -27,7 +28,7 @@ public class UserSensitiveActivity extends AppCompatActivity {
 
         User.get().addObserver(observer);
 
-        checkState();
+        onUserStateChanged();
     }
 
     @Override
@@ -37,21 +38,21 @@ public class UserSensitiveActivity extends AppCompatActivity {
         super.onStop();
     }
 
-    protected boolean shouldGoOn() {
-        return true;
-    }
+    protected abstract boolean shouldGoOn();
 
-    private void checkState() {
+    @MainThread
+    protected void onUserStateChanged() {
         if (!shouldGoOn()) {
             returnToMainActivity();
         }
     }
 
-    private class UserStateObserver implements Observer {
+    private class UserStateObserver extends ObserverInMainThread {
 
         @Override
-        public void update(Observable observable, Object o) {
-            checkState();
+        @MainThread
+        public void updateInternal(Observable observable, Object o) {
+            onUserStateChanged();
         }
     }
 

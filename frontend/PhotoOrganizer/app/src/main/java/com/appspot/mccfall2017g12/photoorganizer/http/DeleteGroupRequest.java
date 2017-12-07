@@ -1,4 +1,4 @@
-package com.appspot.mccfall2017g12.photoorganizer.http.http;
+package com.appspot.mccfall2017g12.photoorganizer.http;
 
 public class DeleteGroupRequest {
 	private String group_id;

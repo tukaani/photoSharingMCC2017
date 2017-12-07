@@ -2,23 +2,16 @@ package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 
-import com.appspot.mccfall2017g12.photoorganizer.http.http.GroupHttpClient;
-import com.appspot.mccfall2017g12.photoorganizer.http.http.JoinGroupRequest;
+import com.appspot.mccfall2017g12.photoorganizer.http.GroupHttpClient;
+import com.appspot.mccfall2017g12.photoorganizer.http.JoinGroupRequest;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.zxing.Result;
 
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 import okhttp3.Response;
@@ -71,7 +64,7 @@ public class JoinActivity extends UserSensitiveActivity
 
     public void sendPost(final String qr, final JoinActivity joinActivity) {
 
-        Thread thread = new Thread(new Runnable() {
+        ThreadTools.EXECUTOR.execute(new Runnable() {
             @Override
             public void run() {
                 final JoinActivity parent=joinActivity;
@@ -100,8 +93,13 @@ public class JoinActivity extends UserSensitiveActivity
                                 });
 
                             } else {
-                                JoinActivity.this.startActivity(new Intent(JoinActivity.this, MainActivity.class));
-                                finish();
+                                parent.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        JoinActivity.this.startActivity(new Intent(JoinActivity.this, MainActivity.class));
+                                        finish();
+                                    }
+                                });
                             }
 
                         } catch (IOException e) {
@@ -127,7 +125,5 @@ public class JoinActivity extends UserSensitiveActivity
                 }
             }
         });
-
-        thread.start();
     }
 }

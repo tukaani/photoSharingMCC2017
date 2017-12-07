@@ -19,18 +19,18 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.Observable;
 import java.util.concurrent.Executor;
 
-/**
- * Created by Edgar on 27/11/2017.
- */
-
 public class User extends Observable {
 
     private static final String TAG = "user";
 
     private static final int STATE_USERNAME_OK = 0x1;
-    private static final int STATE_PRIVATE_ALBUM_OK = 0x2;
-    private static final int STATE_IN_GROUP = 0x4;
-    private static final int STATE_GROUP_ALBUM_OK = 0x8;
+    private static final int STATE_IN_GROUP = 0x2;
+    private static final int STATE_GROUP_OK = 0x4;
+    private static final int STATE_ID_TOKEN_OK = 0x8;
+
+    public static final int STATUS_UNKNOWN = 0;
+    public static final int STATUS_NORMAL = 1;
+    public static final int STATUS_CREATOR = 2;
 
     private static User user;
 
@@ -40,15 +40,20 @@ public class User extends Observable {
     private String groupId;
     private String Idtoken;
     private String groupName;
-    private PhotoSynchronizer synchronizer;
     private String expirationDate;
-    private int state = 0;
+    private String creatorId;
+
+    private int state = 0x00;
+
+    private final Object lock = new Object();
+
     private final LocalDatabase database;
     private final FirebaseDatabase firebaseDatabase;
-    private final Object lock = new Object();
     private final Executor executor;
     private final PhotoSynchronizer.Factory synchronizerFactory;
     private final ValueEventListener groupListener;
+
+    private PhotoSynchronizer synchronizer;
 
     private User(String userId, final Context context) {
         this.userId = userId;
@@ -87,7 +92,7 @@ public class User extends Observable {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                initPrivateAlbum();
+                initAlbum(Album.PRIVATE_ALBUM_ID, "Private");
             }
         });
 
@@ -95,7 +100,10 @@ public class User extends Observable {
                 .addOnSuccessListener(new OnSuccessListener<GetTokenResult>() {
             @Override
             public void onSuccess(GetTokenResult getTokenResult) {
-              Idtoken = getTokenResult.getToken();
+                synchronized (lock) {
+                    Idtoken = getTokenResult.getToken();
+                    setState(STATE_ID_TOKEN_OK, true);
+                }
             }
         });
 
@@ -119,32 +127,29 @@ public class User extends Observable {
         user.setGroupId(null);
     }
 
-    @WorkerThread
-    private void initPrivateAlbum() {
+    private void initAlbum(String albumId, String name) {
         Album album = new Album();
-        album.albumId = Album.PRIVATE_ALBUM_ID;
-        album.name = "Private";
+        album.albumId = albumId;
+        album.name = name;
 
         database.galleryDao().insertAlbums(album);
-
-        setState(STATE_PRIVATE_ALBUM_OK, true);
     }
 
-    private void initGroupAlbum(final String groupId) {
+    private void initGroup(final String groupId) {
         firebaseDatabase.getReference("groups").child(groupId)
                 .addListenerForSingleValueEvent(
                 new AsyncValueEventListener(executor) {
                     @Override
                     public void onDataChangeAsync(DataSnapshot dataSnapshot) {
-                        Album album = new Album();
 
-                        album.albumId = groupId;
-                        album.name = dataSnapshot.child("name").getValue(String.class);
-                        expirationDate = dataSnapshot.child("end_time").getValue(String.class);
-                        groupName = album.name;
-                        database.galleryDao().insertAlbums(album);
+                        synchronized (lock) {
+                            groupName = dataSnapshot.child("name").getValue(String.class);
+                            expirationDate = dataSnapshot.child("end_time").getValue(String.class);
+                            creatorId = dataSnapshot.child("creator").getValue(String.class);
+                            setState(STATE_GROUP_OK, true);
+                        }
 
-                        setState(STATE_GROUP_ALBUM_OK, true);
+                        initAlbum(groupId, groupName);
                     }
 
                     @Override
@@ -176,7 +181,7 @@ public class User extends Observable {
         }
         else {
             newSynchronizer = synchronizerFactory.create(newGroupId);
-            initGroupAlbum(newGroupId);
+            initGroup(newGroupId);
         }
 
         synchronized (lock) {
@@ -203,14 +208,27 @@ public class User extends Observable {
     }
 
     public boolean canTakePhoto() {
-        synchronized (lock) {
-            return getState(STATE_USERNAME_OK) && getState(STATE_PRIVATE_ALBUM_OK);
-        }
+        return getState(STATE_USERNAME_OK);
+    }
+
+    public boolean canManageGroups() {
+        return getState(STATE_ID_TOKEN_OK);
     }
 
     public boolean isInGroup() {
         synchronized (lock) {
             return getState(STATE_IN_GROUP);
+        }
+    }
+
+    public int getUserStatus() {
+        synchronized (lock) {
+            if (creatorId == null)
+                return STATUS_UNKNOWN;
+            else if (TextUtils.equals(creatorId, userId))
+                return STATUS_CREATOR;
+            else
+                return STATUS_NORMAL;
         }
     }
 
@@ -267,11 +285,25 @@ public class User extends Observable {
         user = null;
     }
 
-    public String getIdtoken() {
-        return Idtoken;
+    public String getUserId() {
+        return userId;
     }
 
-    public String getGroupName() { return groupName; }
+    public String getIdtoken() {
+        synchronized (lock) {
+            return Idtoken;
+        }
+    }
 
-    public String getExpirationDate() { return expirationDate; }
+    public String getGroupName() {
+        synchronized (lock) {
+            return groupName;
+        }
+    }
+
+    public String getExpirationDate() {
+        synchronized (lock) {
+            return expirationDate;
+        }
+    }
 }

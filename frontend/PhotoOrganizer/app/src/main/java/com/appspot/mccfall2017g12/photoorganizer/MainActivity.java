@@ -67,14 +67,20 @@ public class MainActivity extends AppCompatActivity {
             new MenuItem(R.string.takePhoto, R.drawable.ic_add_a_photo_black_24dp) {
                 @Override
                 public void launch(Context context) {
-                    if (User.get().canTakePhoto()) {
-                        takePhoto();
+                    if (!User.get().canTakePhoto()) {
+                        showInitializingToast();
+                        return;
                     }
+                    takePhoto();
                 }
             },
             new MenuItem(R.string.groups, R.drawable.ic_group_black_24dp) {
                 @Override
                 public void launch(Context context) {
+                    if (!User.get().canManageGroups()) {
+                        showInitializingToast();
+                        return;
+                    }
                     Class klass;
                     if (User.get().isInGroup())
                         klass = GroupActivity.class;
@@ -105,6 +111,10 @@ public class MainActivity extends AppCompatActivity {
                 menuItem.launch(MainActivity.this);
             }
         });
+    }
+
+    private void showInitializingToast() {
+        Toast.makeText(this, R.string.initializing, Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -144,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_PHOTO && resultCode == RESULT_OK) {
             final File photoFile = FileTools.get(this.photoFilename);
-            final String uid = mAuth.getCurrentUser().getUid();
+            final String uid = User.get().getUserId();
 
             ThreadTools.EXECUTOR.execute(new Runnable() {
                 @Override

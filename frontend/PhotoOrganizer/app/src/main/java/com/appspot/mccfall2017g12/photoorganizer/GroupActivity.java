@@ -2,22 +2,25 @@ package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.MainThread;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
+import com.appspot.mccfall2017g12.photoorganizer.http.DeleteGroupRequest;
+import com.appspot.mccfall2017g12.photoorganizer.http.Endpoints;
+import com.appspot.mccfall2017g12.photoorganizer.http.SimpleGroupClient;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +31,11 @@ public class GroupActivity extends UserSensitiveActivity {
     private RecyclerView recyclerView;
     private final DatabaseReference membersReference;
     private final DatabaseReference usersReference;
+    private FirebaseDatabase firebaseDatabase;
+    private TextView groupTextView;
+    private TextView expirationTextView;
+    private Button addButton;
+    private Button leaveButton;
 
     public GroupActivity()
     {
@@ -38,25 +46,19 @@ public class GroupActivity extends UserSensitiveActivity {
                 .child("members");
     }
 
-    private FirebaseDatabase firebaseDatabase;
-    private TextView mGroup;
-    private TextView mExpiration;
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group);
 
         firebaseDatabase = FirebaseDatabase.getInstance();
-        mGroup = (TextView) findViewById(R.id.textView3);
-        mGroup.setText(User.get().getGroupName());
-        mExpiration = (TextView) findViewById(R.id.textView5);
-        mExpiration.setText(User.get().getExpirationDate());
-        RecyclerView recyclerView = findViewById(R.id.recyclerView);
 
+        groupTextView = findViewById(R.id.textView3);
+        expirationTextView = findViewById(R.id.textView5);
+        addButton = findViewById(R.id.addButton);
+        leaveButton = findViewById(R.id.leaveButton);
 
-        findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
+        addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(GroupActivity.this, QRActivity.class);
@@ -64,9 +66,58 @@ public class GroupActivity extends UserSensitiveActivity {
             }
         });
 
+        leaveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                DeleteGroupRequest request = new DeleteGroupRequest();
+                request.setUser_id(User.get().getUserId());
+                request.setGroup_id(User.get().getGroupId());
+                SimpleGroupClient.post(Endpoints.DELETE, request, User.get().getIdtoken(),
+                        new SimpleGroupClient.Callback() {
+                            @Override
+                            public void onSuccess() {
+                                returnToMainActivity();
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                e.printStackTrace();
+                            }
+                        });
+            }
+        });
+
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        updateUI();
+    }
+
+    @MainThread
+    private void updateUI() {
+        groupTextView.setText(User.get().getGroupName());
+        expirationTextView.setText(User.get().getExpirationDate());
+        switch (User.get().getUserStatus()) {
+            case User.STATUS_CREATOR:
+                leaveButton.setText("Delete");
+                leaveButton.setVisibility(View.VISIBLE);
+                break;
+            case User.STATUS_NORMAL:
+                leaveButton.setText("Leave");
+                leaveButton.setVisibility(View.VISIBLE);
+                break;
+            default:
+                leaveButton.setVisibility(View.INVISIBLE);
+                break;
+        }
+    }
+
+    @Override
+    @MainThread
+    protected void onUserStateChanged() {
+        super.onUserStateChanged();
+        updateUI();
     }
 
     @Override
@@ -94,19 +145,9 @@ public class GroupActivity extends UserSensitiveActivity {
         return User.get().isInGroup();
     }
 
-    private class Member implements Diffable<Member> {
+    private class Member {
         public String username;
         public String userId;
-
-        @Override
-        public boolean isTheSameAs(Member other) {
-            return TextUtils.equals(this.userId, other.userId);
-        }
-
-        @Override
-        public boolean hasTheSameContentAs(Member other) {
-            return TextUtils.equals(this.username, other.username);
-        }
     }
 
     private class MemberAdapter extends RecyclerView.Adapter<MemberViewHolder>
