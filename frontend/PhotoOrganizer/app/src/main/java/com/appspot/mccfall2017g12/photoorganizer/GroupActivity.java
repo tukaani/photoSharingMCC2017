@@ -2,14 +2,19 @@ package com.appspot.mccfall2017g12.photoorganizer;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.MainThread;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
+import com.appspot.mccfall2017g12.photoorganizer.http.DeleteGroupRequest;
+import com.appspot.mccfall2017g12.photoorganizer.http.Endpoints;
+import com.appspot.mccfall2017g12.photoorganizer.http.SimpleGroupClient;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -24,25 +29,31 @@ public class GroupActivity extends UserSensitiveActivity {
 
     private MemberAdapter memberAdapter;
     private RecyclerView recyclerView;
-    private final DatabaseReference membersReference;
-    private final DatabaseReference usersReference;
-    private final FirebaseDatabase firebaseDatabase;
-
-    public GroupActivity()
-    {
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        usersReference = firebaseDatabase.getReference("users");
-        membersReference = firebaseDatabase.getReference("groups")
-                .child(User.get().getGroupId())
-                .child("members");
-    }
+    private DatabaseReference membersReference;
+    private DatabaseReference usersReference;
+    private FirebaseDatabase firebaseDatabase;
+    private TextView groupTextView;
+    private TextView expirationTextView;
+    private Button addButton;
+    private Button leaveButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group);
 
-        findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        usersReference = firebaseDatabase.getReference("users");
+        membersReference = firebaseDatabase.getReference("groups")
+                .child(getUser().getGroupId())
+                .child("members");
+
+        groupTextView = findViewById(R.id.textView3);
+        expirationTextView = findViewById(R.id.textView5);
+        addButton = findViewById(R.id.addButton);
+        leaveButton = findViewById(R.id.leaveButton);
+
+        addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(GroupActivity.this, QRActivity.class);
@@ -50,9 +61,58 @@ public class GroupActivity extends UserSensitiveActivity {
             }
         });
 
+        leaveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                DeleteGroupRequest request = new DeleteGroupRequest();
+                request.setUser_id(getUser().getUserId());
+                request.setGroup_id(getUser().getGroupId());
+                SimpleGroupClient.post(Endpoints.DELETE, request, getUser().getIdtoken(),
+                        new SimpleGroupClient.Callback() {
+                            @Override
+                            public void onSuccess() {
+                                returnToMainActivity();
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                e.printStackTrace();
+                            }
+                        });
+            }
+        });
+
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        updateUI();
+    }
+
+    @MainThread
+    private void updateUI() {
+        groupTextView.setText(getUser().getGroupName());
+        expirationTextView.setText(getUser().getExpirationDate());
+        switch (getUser().getUserStatus()) {
+            case User.STATUS_AUTHOR:
+                leaveButton.setText("Delete");
+                leaveButton.setVisibility(View.VISIBLE);
+                break;
+            case User.STATUS_NORMAL:
+                leaveButton.setText("Leave");
+                leaveButton.setVisibility(View.VISIBLE);
+                break;
+            default:
+                leaveButton.setVisibility(View.INVISIBLE);
+                break;
+        }
+    }
+
+    @Override
+    @MainThread
+    protected void onUserStateChanged() {
+        super.onUserStateChanged();
+        updateUI();
     }
 
     @Override
@@ -77,22 +137,12 @@ public class GroupActivity extends UserSensitiveActivity {
 
     @Override
     protected boolean shouldGoOn() {
-        return User.get().isInGroup();
+        return getUser().isInGroup();
     }
 
-    private class Member implements Diffable<Member> {
+    private class Member {
         public String username;
         public String userId;
-
-        @Override
-        public boolean isTheSameAs(Member other) {
-            return TextUtils.equals(this.userId, other.userId);
-        }
-
-        @Override
-        public boolean hasTheSameContentAs(Member other) {
-            return TextUtils.equals(this.username, other.username);
-        }
     }
 
     private class MemberAdapter extends RecyclerView.Adapter<MemberViewHolder>

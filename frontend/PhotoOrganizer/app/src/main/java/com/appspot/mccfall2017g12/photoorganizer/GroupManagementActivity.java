@@ -24,7 +24,6 @@ public class GroupManagementActivity extends UserSensitiveActivity {
                 new MenuItem(R.string.creategroup, R.drawable.ic_group_add_black_24dp) {
                     @Override
                     public void launch(Context context) {
-                        //Toast.makeText(context, "Create new", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(GroupManagementActivity.this, CreateGroupActivity.class);
                         GroupManagementActivity.this.startActivity(intent);
                     }
@@ -33,13 +32,6 @@ public class GroupManagementActivity extends UserSensitiveActivity {
                     @Override
                     public void launch(Context context) {
                         GroupManagementActivity.this.startActivity(new Intent(GroupManagementActivity.this,JoinActivity.class));
-                        Toast.makeText(context, "Join your friends", Toast.LENGTH_SHORT).show();
-                    }
-                },
-                new MenuItem(R.string.leavegroup, R.drawable.ic_person_black_24dp) {
-                    @Override
-                    public void launch(Context context) {
-                        Toast.makeText(context, "Going solo", Toast.LENGTH_SHORT).show();
                     }
                 }
 
@@ -59,6 +51,6 @@ public class GroupManagementActivity extends UserSensitiveActivity {
 
     @Override
     protected boolean shouldGoOn() {
-        return !User.get().isInGroup();
+        return !getUser().isInGroup();
     }
 }

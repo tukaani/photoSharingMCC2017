@@ -54,6 +54,8 @@ public class PhotoAdapter extends HeaderAdapter<Photo.Extended, PhotoAdapter.Hea
             Picasso.with(context)
                     .load(FileTools.get(photo.file))
                     .config(Bitmap.Config.RGB_565)
+                    .resize(150,150)
+                    .centerCrop()
                     .into(holder.photoImageView);
     }
 

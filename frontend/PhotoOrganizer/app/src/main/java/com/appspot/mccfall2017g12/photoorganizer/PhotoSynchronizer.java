@@ -67,7 +67,7 @@ public class PhotoSynchronizer {
         this.database = LocalDatabase.getInstance(context);
         this.photoSyncDb = Room.inMemoryDatabaseBuilder(context, PhotoSyncDatabase.class).build();
         this.executor = ThreadTools.EXECUTOR;
-        this.mainHandler = new Handler(Looper.getMainLooper());
+        this.mainHandler = ThreadTools.MAIN_HANDLER;
         this.firebaseDatabase = FirebaseDatabase.getInstance();
         this.firebaseStorage = FirebaseStorage.getInstance();
         this.photoEventListener = new PhotoEventListener();
