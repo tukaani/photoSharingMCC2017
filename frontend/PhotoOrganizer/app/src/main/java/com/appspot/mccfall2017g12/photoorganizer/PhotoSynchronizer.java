@@ -74,8 +74,8 @@ public class PhotoSynchronizer {
         this.groupReference = this.firebaseDatabase.getReference("photos").child(groupId);
         this.context = context;
         this.notifier = Notifier.getInstance();
-        //this.CURRENT_RESOLUTION_LEVEL = getCurrentResolution();
-        getCurrentResolution();
+        //this.CURRENT_RESOLUTION_LEVEL;// = getCurrentResolution();
+
     }
 
     public interface Factory {
@@ -99,25 +99,25 @@ public class PhotoSynchronizer {
         });
     }
 
-    private void getCurrentResolution() {
+    private String getCurrentResolution() {
         Map<String, ?> settings = PreferenceManager.getDefaultSharedPreferences(context).getAll();
         int status = CheckNetworkConnection.getConnectivityStatusString(context);
 
         if(status == CheckNetworkConnection.NETWORK_STATUS_WIFI) {
             System.out.println("WIFI!!");
             System.out.println("SETTING: " + settings.get("pref_imgQuality_wifi"));
-            this.CURRENT_RESOLUTION_LEVEL = changeResolutionFormat(settings.get("pref_imgQuality_wifi").toString());
-            //return changeResolutionFormat(settings.get("pref_imgQuality_wifi").toString());
+            //this.CURRENT_RESOLUTION_LEVEL = changeResolutionFormat(settings.get("pref_imgQuality_wifi").toString());
+            return changeResolutionFormat(settings.get("pref_imgQuality_wifi").toString());
 
         } else if(status == CheckNetworkConnection.NETWORK_STATUS_MOBILE) {
             System.out.println("MOBILE!!");
             System.out.println("SETTING: " + settings.get("pref_imgQuality_mobile"));
-            this.CURRENT_RESOLUTION_LEVEL = changeResolutionFormat(settings.get("pref_imgQuality_mobile").toString());
-            //changeResolutionFormat(settings.get("pref_imgQuality_mobile").toString());
+
+            return changeResolutionFormat(settings.get("pref_imgQuality_mobile").toString());
         } else {
             // TODO: How to handle??
             Toast.makeText(context, "No connection", Toast.LENGTH_SHORT).show();
-            //return "No connection";
+            return "";
         }
 
 
@@ -139,7 +139,7 @@ public class PhotoSynchronizer {
     public void downloadAllImprovablePhotos() {
         getCurrentResolution();
         final String[] photoIds = database.galleryDao().loadPhotosWithHigherOnlineResolution(
-                groupId, ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL));
+                groupId, ResolutionTools.getResolution(getCurrentResolution()));
 
         for (final String photoId : photoIds) {
             if (shouldDownload(photoId)) {
@@ -158,7 +158,7 @@ public class PhotoSynchronizer {
     public void uploadAllImprovablePhotos() {
         getCurrentResolution();
         final String[] photoIds = database.galleryDao().loadPhotosWithHigherLocalResolution(
-                groupId, ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL));
+                groupId, ResolutionTools.getResolution(getCurrentResolution()));
 
         for (final String photoId : photoIds) {
             if (shouldUpload(photoId)) {
@@ -179,7 +179,7 @@ public class PhotoSynchronizer {
         if (resolution == null)
             return false;
 
-        int sourceResolution = ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL,
+        int sourceResolution = ResolutionTools.getResolution(getCurrentResolution(),
                 resolution.online);
 
         return sourceResolution > resolution.local;
@@ -192,7 +192,7 @@ public class PhotoSynchronizer {
         if (resolution == null)
             return false;
 
-        int sourceResolution = ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL,
+        int sourceResolution = ResolutionTools.getResolution(getCurrentResolution(),
                 resolution.local);
 
         return sourceResolution > resolution.online;
@@ -261,7 +261,7 @@ public class PhotoSynchronizer {
                 int onlineResolution = dataSnapshot.child("resolution").getValue(int.class);
                 database.galleryDao().improvePhotoOnlineResolution(photoId, onlineResolution);
             }
-            if (dataSnapshot.hasChild("files/" + CURRENT_RESOLUTION_LEVEL)
+            if (dataSnapshot.hasChild("files/" + getCurrentResolution())
                     && shouldDownload(photoId)) {
 
                 mainHandler.post(new Runnable() {
@@ -358,9 +358,11 @@ public class PhotoSynchronizer {
                 return;
             }
 
+            String current_resolution_level = getCurrentResolution();
+
             Photo.FileInfo onlineFileInfo = new Photo.FileInfo();
             onlineFileInfo.file = UUID.randomUUID().toString() + ".jpg";
-            onlineFileInfo.resolution = localFileInfo.resolution;
+            onlineFileInfo.resolution = ResolutionTools.getResolution(current_resolution_level, localFileInfo.resolution);
 
             volatileFileInfo = onlineFileInfo;
 
@@ -372,10 +374,10 @@ public class PhotoSynchronizer {
             FileUploadListener listener = new FileUploadListener();
 
             // Resolution needs to be downgraded
-            if(CURRENT_RESOLUTION_LEVEL != ResolutionTools.LEVEL_FULL) {
+            if(current_resolution_level != ResolutionTools.LEVEL_FULL) {
                 byte[] decodedfile = decodeFile(localFile);
                 if(decodedfile != null) {
-                    System.out.println("Uploading resolution " + ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL) + " to server");
+                    System.out.println("Uploading resolution " + ResolutionTools.getResolution(current_resolution_level) + " to server");
                     fileRef.putBytes(decodedfile)
                             .addOnSuccessListener(executor, listener)
                             .addOnFailureListener(executor, listener);
@@ -401,7 +403,7 @@ public class PhotoSynchronizer {
                 BitmapFactory.decodeStream(new FileInputStream(f), null, o);
 
                 // The new size we want to scale to
-                final int REQUIRED_SIZE = ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL);
+                final int REQUIRED_SIZE = ResolutionTools.getResolution(getCurrentResolution());
 
                 int scale = 1;
                 if (o.outHeight > REQUIRED_SIZE ) {
@@ -476,7 +478,7 @@ public class PhotoSynchronizer {
             }
 
             DatabaseReference photosRef = firebaseDatabase.getReference("photos");
-            photosRef.child(groupId).child(photoId).child("files").child(CURRENT_RESOLUTION_LEVEL)
+            photosRef.child(groupId).child(photoId).child("files").child(getCurrentResolution())
                     .addListenerForSingleValueEvent(new FilenamePullListener());
         }
 
