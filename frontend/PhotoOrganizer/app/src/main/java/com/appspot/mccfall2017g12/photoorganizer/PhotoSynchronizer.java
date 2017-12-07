@@ -17,10 +17,12 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -39,14 +41,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 
 public class PhotoSynchronizer {
 
     //TODO Should be calculated based on network state & settings
-    private final static String CURRENT_RESOLUTION_LEVEL = ResolutionTools.LEVEL_FULL;
-
+    //private final static String CURRENT_RESOLUTION_LEVEL = ResolutionTools.LEVEL_FULL;
+    private  String CURRENT_RESOLUTION_LEVEL;
     private final String groupId;
     private final LocalDatabase database;
     private final PhotoSyncDatabase photoSyncDb;
@@ -71,6 +74,7 @@ public class PhotoSynchronizer {
         this.groupReference = this.firebaseDatabase.getReference("photos").child(groupId);
         this.context = context;
         this.notifier = Notifier.getInstance();
+        this.CURRENT_RESOLUTION_LEVEL = getCurrentResolution();
     }
 
     public interface Factory {
@@ -92,6 +96,39 @@ public class PhotoSynchronizer {
                 new PhotoUpload(photoId).start();
             }
         });
+    }
+
+    private String getCurrentResolution() {
+        Map<String, ?> settings = PreferenceManager.getDefaultSharedPreferences(context).getAll();
+        int status = CheckNetworkConnection.getConnectivityStatusString(context);
+
+        if(status == CheckNetworkConnection.NETWORK_STATUS_WIFI) {
+            System.out.println("WIFI!!");
+            System.out.println("SETTING: " + settings.get("pref_imgQuality_wifi"));
+            return changeResolutionFormat(settings.get("pref_imgQuality_wifi").toString());
+
+        } else if(status == CheckNetworkConnection.NETWORK_STATUS_MOBILE) {
+            System.out.println("MOBILE!!");
+            System.out.println("SETTING: " + settings.get("pref_imgQuality_mobile"));
+            return changeResolutionFormat(settings.get("pref_imgQuality_mobile").toString());
+        } else {
+            // TODO: How to handle??
+            Toast.makeText(context, "No connection", Toast.LENGTH_SHORT).show();
+            return "No connection";
+        }
+
+
+    }
+    private String changeResolutionFormat(String format) {
+        if(format.equals("640x480")) {
+            System.out.println("640x480");
+            return ResolutionTools.LEVEL_LOW;
+        } else if(format.equals("1280x960")) {
+            System.out.println("1280x960");
+            return ResolutionTools.LEVEL_HIGH;
+        }
+        System.out.println("FULL");
+        return ResolutionTools.LEVEL_FULL;
     }
 
     // This should be called when network/settings change.
