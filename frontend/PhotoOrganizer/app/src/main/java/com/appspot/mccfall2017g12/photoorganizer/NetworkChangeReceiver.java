@@ -18,6 +18,7 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
             Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
                 public void run() {
+                    PhotoSynchronizer.downloadAllImprovablePhotos();
                     int status = CheckNetworkConnection.getConnectivityStatusString(context);
                     if (status == CheckNetworkConnection.NETWORK_STATUS_WIFI){
                         //use wifi preferences

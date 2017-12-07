@@ -74,7 +74,8 @@ public class PhotoSynchronizer {
         this.groupReference = this.firebaseDatabase.getReference("photos").child(groupId);
         this.context = context;
         this.notifier = Notifier.getInstance();
-        this.CURRENT_RESOLUTION_LEVEL = getCurrentResolution();
+        //this.CURRENT_RESOLUTION_LEVEL = getCurrentResolution();
+        getCurrentResolution();
     }
 
     public interface Factory {
@@ -98,23 +99,25 @@ public class PhotoSynchronizer {
         });
     }
 
-    private String getCurrentResolution() {
+    private void getCurrentResolution() {
         Map<String, ?> settings = PreferenceManager.getDefaultSharedPreferences(context).getAll();
         int status = CheckNetworkConnection.getConnectivityStatusString(context);
 
         if(status == CheckNetworkConnection.NETWORK_STATUS_WIFI) {
             System.out.println("WIFI!!");
             System.out.println("SETTING: " + settings.get("pref_imgQuality_wifi"));
-            return changeResolutionFormat(settings.get("pref_imgQuality_wifi").toString());
+            this.CURRENT_RESOLUTION_LEVEL = changeResolutionFormat(settings.get("pref_imgQuality_wifi").toString());
+            //return changeResolutionFormat(settings.get("pref_imgQuality_wifi").toString());
 
         } else if(status == CheckNetworkConnection.NETWORK_STATUS_MOBILE) {
             System.out.println("MOBILE!!");
             System.out.println("SETTING: " + settings.get("pref_imgQuality_mobile"));
-            return changeResolutionFormat(settings.get("pref_imgQuality_mobile").toString());
+            this.CURRENT_RESOLUTION_LEVEL = changeResolutionFormat(settings.get("pref_imgQuality_mobile").toString());
+            //changeResolutionFormat(settings.get("pref_imgQuality_mobile").toString());
         } else {
             // TODO: How to handle??
             Toast.makeText(context, "No connection", Toast.LENGTH_SHORT).show();
-            return "No connection";
+            //return "No connection";
         }
 
 
@@ -133,7 +136,8 @@ public class PhotoSynchronizer {
 
     // This should be called when network/settings change.
     @WorkerThread
-    private void downloadAllImprovablePhotos() {
+    public void downloadAllImprovablePhotos() {
+        getCurrentResolution();
         final String[] photoIds = database.galleryDao().loadPhotosWithHigherOnlineResolution(
                 groupId, ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL));
 
@@ -151,7 +155,8 @@ public class PhotoSynchronizer {
 
     // This should be called when network/settings change.
     @WorkerThread
-    private void uploadAllImprovablePhotos() {
+    public void uploadAllImprovablePhotos() {
+        getCurrentResolution();
         final String[] photoIds = database.galleryDao().loadPhotosWithHigherLocalResolution(
                 groupId, ResolutionTools.getResolution(CURRENT_RESOLUTION_LEVEL));
 
