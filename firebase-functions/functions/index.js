@@ -14,7 +14,12 @@ const spawn = require('child-process-promise').spawn;
 
 exports.detectFaces = functions.database.ref('/photos/{groupid}/{photoid}/files/full')
     .onWrite(event => {
-  
+    
+    if (!event.data.exists()) {
+      console.log('Filed were deleted!');
+      return null;
+    }
+
     var dbPath = String(event.data.ref.parent);
     var baseUrl = 'gs://' + dbPath.substring(8).split('.')[0] + '.appspot.com/images/';
     var groupid = dbPath.split('/')[4];
@@ -42,6 +47,11 @@ exports.detectFaces = functions.database.ref('/photos/{groupid}/{photoid}/files/
 
 exports.createResolutions = functions.database.ref('/photos/{groupid}/{photoid}/files/full')
     .onWrite(event => {
+      
+      if (!event.data.exists()) {
+        console.log('Filed were deleted!');
+        return null;
+      }
       console.log("Creating resolutions..");
 
       const groupid = event.params.groupid
