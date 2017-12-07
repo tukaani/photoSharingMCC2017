@@ -40,4 +40,5 @@
     <string name="new_photos_text">There are %d new photo(s) in &quot;%s&quot;</string>
     <string name="new_photos">New photos</string>
     <string name="initializing">Initializing... wait a second and try again</string>
+    <string name="group_duration">Duration in minutes</string>
 </resources>

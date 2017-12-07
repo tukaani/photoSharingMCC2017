@@ -31,7 +31,7 @@ public class User extends Observable {
 
     public static final int STATUS_UNKNOWN = 0;
     public static final int STATUS_NORMAL = 1;
-    public static final int STATUS_CREATOR = 2;
+    public static final int STATUS_AUTHOR = 2;
 
     private static User user;
 
@@ -42,7 +42,7 @@ public class User extends Observable {
     private String Idtoken;
     private String groupName;
     private String expirationDate;
-    private String creatorId;
+    private String author;
 
     private int state = 0x00;
 
@@ -165,7 +165,7 @@ public class User extends Observable {
                         synchronized (lock) {
                             groupName = dataSnapshot.child("name").getValue(String.class);
                             expirationDate = dataSnapshot.child("end_time").getValue(String.class);
-                            creatorId = dataSnapshot.child("creator").getValue(String.class);
+                            author = dataSnapshot.child("author").getValue(String.class);
                             setState(STATE_GROUP_OK, true);
                         }
 
@@ -243,10 +243,10 @@ public class User extends Observable {
 
     public int getUserStatus() {
         synchronized (lock) {
-            if (creatorId == null)
+            if (author == null)
                 return STATUS_UNKNOWN;
-            else if (TextUtils.equals(creatorId, userId))
-                return STATUS_CREATOR;
+            else if (TextUtils.equals(author, userId))
+                return STATUS_AUTHOR;
             else
                 return STATUS_NORMAL;
         }

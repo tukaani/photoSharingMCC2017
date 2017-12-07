@@ -94,7 +94,7 @@ public class GroupActivity extends UserSensitiveActivity {
         groupTextView.setText(getUser().getGroupName());
         expirationTextView.setText(getUser().getExpirationDate());
         switch (getUser().getUserStatus()) {
-            case User.STATUS_CREATOR:
+            case User.STATUS_AUTHOR:
                 leaveButton.setText("Delete");
                 leaveButton.setVisibility(View.VISIBLE);
                 break;
