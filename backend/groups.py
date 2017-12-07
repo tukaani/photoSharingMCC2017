@@ -105,13 +105,13 @@ def delete(group_id, user_id):
         group_id).child("creator").get().val()
     database.child("users").child(user_id).child("group").remove()
     if user_id == author_id:
-        database.child("groups").child(
-            group_id).remove()
         database.child("photos").child(group_id).remove()
         members = database.child("groups").child(
             group_id).child("members").get().val()
         for member in members:
             database.child("users").child(member).child("group").remove()
+        database.child("groups").child(
+            group_id).remove()
         for f in storage.list_files():
             path, file = os.path.split(parse.unquote(f.path))
             # print(parse.unquote(f.path))
