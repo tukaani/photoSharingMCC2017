@@ -29,22 +29,13 @@ public class GroupActivity extends UserSensitiveActivity {
 
     private MemberAdapter memberAdapter;
     private RecyclerView recyclerView;
-    private final DatabaseReference membersReference;
-    private final DatabaseReference usersReference;
+    private DatabaseReference membersReference;
+    private DatabaseReference usersReference;
     private FirebaseDatabase firebaseDatabase;
     private TextView groupTextView;
     private TextView expirationTextView;
     private Button addButton;
     private Button leaveButton;
-
-    public GroupActivity()
-    {
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        usersReference = firebaseDatabase.getReference("users");
-        membersReference = firebaseDatabase.getReference("groups")
-                .child(User.get().getGroupId())
-                .child("members");
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +43,10 @@ public class GroupActivity extends UserSensitiveActivity {
         setContentView(R.layout.activity_group);
 
         firebaseDatabase = FirebaseDatabase.getInstance();
+        usersReference = firebaseDatabase.getReference("users");
+        membersReference = firebaseDatabase.getReference("groups")
+                .child(getUser().getGroupId())
+                .child("members");
 
         groupTextView = findViewById(R.id.textView3);
         expirationTextView = findViewById(R.id.textView5);
@@ -70,9 +65,9 @@ public class GroupActivity extends UserSensitiveActivity {
             @Override
             public void onClick(View view) {
                 DeleteGroupRequest request = new DeleteGroupRequest();
-                request.setUser_id(User.get().getUserId());
-                request.setGroup_id(User.get().getGroupId());
-                SimpleGroupClient.post(Endpoints.DELETE, request, User.get().getIdtoken(),
+                request.setUser_id(getUser().getUserId());
+                request.setGroup_id(getUser().getGroupId());
+                SimpleGroupClient.post(Endpoints.DELETE, request, getUser().getIdtoken(),
                         new SimpleGroupClient.Callback() {
                             @Override
                             public void onSuccess() {
@@ -96,9 +91,9 @@ public class GroupActivity extends UserSensitiveActivity {
 
     @MainThread
     private void updateUI() {
-        groupTextView.setText(User.get().getGroupName());
-        expirationTextView.setText(User.get().getExpirationDate());
-        switch (User.get().getUserStatus()) {
+        groupTextView.setText(getUser().getGroupName());
+        expirationTextView.setText(getUser().getExpirationDate());
+        switch (getUser().getUserStatus()) {
             case User.STATUS_CREATOR:
                 leaveButton.setText("Delete");
                 leaveButton.setVisibility(View.VISIBLE);
@@ -142,7 +137,7 @@ public class GroupActivity extends UserSensitiveActivity {
 
     @Override
     protected boolean shouldGoOn() {
-        return User.get().isInGroup();
+        return getUser().isInGroup();
     }
 
     private class Member {

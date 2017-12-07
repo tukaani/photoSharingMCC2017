@@ -27,6 +27,7 @@ public class User extends Observable {
     private static final int STATE_IN_GROUP = 0x2;
     private static final int STATE_GROUP_OK = 0x4;
     private static final int STATE_ID_TOKEN_OK = 0x8;
+    private static final int STATE_ENDED = 0x10;
 
     public static final int STATUS_UNKNOWN = 0;
     public static final int STATUS_NORMAL = 1;
@@ -52,15 +53,19 @@ public class User extends Observable {
     private final Executor executor;
     private final PhotoSynchronizer.Factory synchronizerFactory;
     private final ValueEventListener groupListener;
+    private final FirebaseAuth firebaseAuth;
+    private final FirebaseAuth.IdTokenListener idTokenListener;
+    private final FirebaseAuth.AuthStateListener authStateListener;
 
     private PhotoSynchronizer synchronizer;
 
-    private User(String userId, final Context context) {
+    public User(final String userId, final Context context) {
         this.userId = userId;
         this.firebaseDatabase = FirebaseDatabase.getInstance();
         this.database = LocalDatabase.getInstance(context);
         this.executor = ThreadTools.EXECUTOR;
         this.userRef = firebaseDatabase.getReference("users").child(userId);
+        this.firebaseAuth = FirebaseAuth.getInstance();
 
         this.synchronizerFactory = new PhotoSynchronizer.Factory() {
             @Override
@@ -84,7 +89,29 @@ public class User extends Observable {
             }
         };
 
-        init();
+        this.idTokenListener = new FirebaseAuth.IdTokenListener() {
+            @Override
+            public void onIdTokenChanged(@NonNull FirebaseAuth firebaseAuth) {
+                firebaseAuth.getCurrentUser().getIdToken(true)
+                        .addOnSuccessListener(new OnSuccessListener<GetTokenResult>() {
+                            @Override
+                            public void onSuccess(GetTokenResult getTokenResult) {
+                                synchronized (lock) {
+                                    Idtoken = getTokenResult.getToken();
+                                    setState(STATE_ID_TOKEN_OK, true);
+                                }
+                            }
+                        });
+            }
+        };
+
+        this.authStateListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                if (!TextUtils.equals(firebaseAuth.getUid(), userId))
+                    stop();
+            }
+        };
     }
 
     private void init() {
@@ -93,17 +120,6 @@ public class User extends Observable {
             @Override
             public void run() {
                 initAlbum(Album.PRIVATE_ALBUM_ID, "Private");
-            }
-        });
-
-        FirebaseAuth.getInstance().getCurrentUser().getIdToken(true)
-                .addOnSuccessListener(new OnSuccessListener<GetTokenResult>() {
-            @Override
-            public void onSuccess(GetTokenResult getTokenResult) {
-                synchronized (lock) {
-                    Idtoken = getTokenResult.getToken();
-                    setState(STATE_ID_TOKEN_OK, true);
-                }
             }
         });
 
@@ -120,11 +136,15 @@ public class User extends Observable {
         });
 
         userRef.child("group").addValueEventListener(groupListener);
+        firebaseAuth.addIdTokenListener(idTokenListener);
+        firebaseAuth.addAuthStateListener(authStateListener);
     }
 
     private void stop() {
         userRef.child("group").removeEventListener(groupListener);
-        user.setGroupId(null);
+        firebaseAuth.removeIdTokenListener(idTokenListener);
+        firebaseAuth.removeAuthStateListener(authStateListener);
+        user.setState(STATE_ENDED, true);
     }
 
     private void initAlbum(String albumId, String name) {
@@ -266,16 +286,23 @@ public class User extends Observable {
         }
     }
 
-    public static synchronized User get() {
+    public static synchronized User get(Context context) {
         return user;
     }
 
-    public static synchronized void set(@NonNull String userId, Context context) {
+    public static synchronized User set(@NonNull String userId, Context context) {
         if (user != null) {
+
+            if (TextUtils.equals(user.getUserId(),userId))
+                return user;
+
             user.stop();
         }
 
         user = new User(userId, context);
+        user.init();
+
+        return user;
     }
 
     public static synchronized void end() {
@@ -304,6 +331,12 @@ public class User extends Observable {
     public String getExpirationDate() {
         synchronized (lock) {
             return expirationDate;
+        }
+    }
+
+    public boolean isEnded() {
+        synchronized (lock) {
+            return getState(STATE_ENDED);
         }
     }
 }

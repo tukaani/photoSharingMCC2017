@@ -59,6 +59,6 @@ public class GroupManagementActivity extends UserSensitiveActivity {
 
     @Override
     protected boolean shouldGoOn() {
-        return !User.get().isInGroup();
+        return !getUser().isInGroup();
     }
 }

@@ -29,7 +29,7 @@ public class QRActivity extends UserSensitiveActivity {
 
         qrView = findViewById(R.id.qr_image);
 
-        final String groupId = User.get().getGroupId();
+        final String groupId = getUser().getGroupId();
 
         reference = FirebaseDatabase.getInstance()
                 .getReference("groups")
@@ -64,7 +64,7 @@ public class QRActivity extends UserSensitiveActivity {
 
     @Override
     protected boolean shouldGoOn() {
-        return User.get().isInGroup();
+        return getUser().isInGroup();
     }
 
     Bitmap encodeAsBitmap(String str) {

@@ -59,7 +59,7 @@ public class JoinActivity extends UserSensitiveActivity
 
     @Override
     protected boolean shouldGoOn() {
-        return !User.get().isInGroup();
+        return !getUser().isInGroup();
     }
 
     public void sendPost(final String qr, final JoinActivity joinActivity) {
@@ -81,7 +81,7 @@ public class JoinActivity extends UserSensitiveActivity
                         joinGroupRequest.setToken(splitStr[1]);
 
                         try {
-                            Response response = groupHttpClient.joinGroup(joinGroupRequest, "application/json", User.get().getIdtoken());
+                            Response response = groupHttpClient.joinGroup(joinGroupRequest, "application/json", getUser().getIdtoken());
                             System.out.println(response.body().string());
                             if (response.code() == 400) {
                                 parent.runOnUiThread(new Runnable() {

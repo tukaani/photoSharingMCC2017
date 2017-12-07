@@ -28,7 +28,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.io.File;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends UserSensitiveActivity {
     static final int REQUEST_PHOTO = 1;
 
     private volatile String photoFilename = null;
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
             new MenuItem(R.string.takePhoto, R.drawable.ic_add_a_photo_black_24dp) {
                 @Override
                 public void launch(Context context) {
-                    if (!User.get().canTakePhoto()) {
+                    if (!getUser().canTakePhoto()) {
                         showInitializingToast();
                         return;
                     }
@@ -77,12 +77,12 @@ public class MainActivity extends AppCompatActivity {
             new MenuItem(R.string.groups, R.drawable.ic_group_black_24dp) {
                 @Override
                 public void launch(Context context) {
-                    if (!User.get().canManageGroups()) {
+                    if (!getUser().canManageGroups()) {
                         showInitializingToast();
                         return;
                     }
                     Class klass;
-                    if (User.get().isInGroup())
+                    if (getUser().isInGroup())
                         klass = GroupActivity.class;
                     else
                         klass = GroupManagementActivity.class;
@@ -111,6 +111,11 @@ public class MainActivity extends AppCompatActivity {
                 menuItem.launch(MainActivity.this);
             }
         });
+    }
+
+    @Override
+    protected boolean shouldGoOn() {
+        return true;
     }
 
     private void showInitializingToast() {
@@ -154,18 +159,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_PHOTO && resultCode == RESULT_OK) {
             final File photoFile = FileTools.get(this.photoFilename);
-            final String uid = User.get().getUserId();
+            final String uid = getUser().getUserId();
 
             ThreadTools.EXECUTOR.execute(new Runnable() {
                 @Override
                 public void run() {
 
-                    String groupId = User.get().getGroupId();
+                    String groupId = getUser().getGroupId();
 
                     boolean keepOffline = hasBarcode(photoFile) || groupId == null;
 
                     Photo photo = new Photo();
-                    photo.author = User.get().getUserName();
+                    photo.author = getUser().getUserName();
 
                     if (keepOffline) {
                         photo.albumId = Album.PRIVATE_ALBUM_ID;
@@ -184,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
                             ResolutionTools.calculateResolution(photoFile.getAbsolutePath()));
 
                     if (!keepOffline) {
-                        User.get().getSynchronizer().uploadPhoto(photo.photoId);
+                        getUser().getSynchronizer().uploadPhoto(photo.photoId);
                     }
                 }
             });
