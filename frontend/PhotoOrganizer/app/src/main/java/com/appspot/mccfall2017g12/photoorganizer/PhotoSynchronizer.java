@@ -417,12 +417,12 @@ public class PhotoSynchronizer {
                 BitmapFactory.decodeStream(new FileInputStream(f), null, o);
 
                 // The new size we want to scale to
-                final int REQUIRED_SIZE = ResolutionTools.getResolution(getCurrentResolution());
+                final int REQUIRED_SIZE = ResolutionTools.getSize(getCurrentResolution());
 
                 int scale = 1;
-                if (o.outHeight > REQUIRED_SIZE ) {
+                if (o.outWidth > REQUIRED_SIZE ) {
                     scale = (int)Math.pow(2, (int) Math.ceil(Math.log(REQUIRED_SIZE /
-                            (double) o.outHeight) / Math.log(0.5)));
+                            (double) o.outWidth) / Math.log(0.5)));
                 }
                 // Decode with inSampleSize
                 BitmapFactory.Options o2 = new BitmapFactory.Options();
