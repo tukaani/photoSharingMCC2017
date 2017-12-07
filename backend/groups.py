@@ -109,7 +109,7 @@ def delete(group_id, user_id):
             group_id).remove()
         database.child("photos").child(group_id).remove()
         members = database.child("groups").child(
-            group).child("members").get().val()
+            group_id).child("members").get().val()
         for member in members:
             database.child("users").child(member).child("group").remove()
         for f in storage.list_files():
