@@ -31,6 +31,7 @@ cd ..
 # ---- Deploying app  ----
 echo -e "${GREEN}---- Deploying app  ---- ${GREEN}"
 cd backend
+gcloud config set project mcc-fall-2017-g12
 gcloud app deploy
 
 #---- Deploying cronjobs  ----
