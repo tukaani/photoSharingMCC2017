@@ -5,10 +5,8 @@
 # exit if errors
 set -e
 
-# Some colors
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
-NC='\033[0m' # No Color
 
 
 # ---- build Android package ----
@@ -38,4 +36,4 @@ gcloud app deploy
 echo -e "${GREEN}---- Deploying cronjobs  ----${GREEN}"
 gcloud app deploy cron.yaml
 
-echo -e "${GREEN}---- All done!  ----${GREEN}"
+echo -e "${BLUE}---- All done!  ----${BLUE}"
