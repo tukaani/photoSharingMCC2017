@@ -1,6 +1,7 @@
 # PhotoOrganizer
 
-by Group 12 (a.k.a Mysterious Mind)
+by Olli Kiljunen, Edga Pardo Muñoz, Ilkka Saarnilehto, Tuukka Rouhiainen and Kalaiarasan Saminathan
+School project for course Mobile Cloud Computing.
 
 ## Build
 
