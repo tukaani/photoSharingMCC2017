@@ -1,7 +1,6 @@
-# PhotoOrganizer
+# PhotoOrganizer, School project for course Mobile Cloud Computing.
 
 by Olli Kiljunen, Edga Pardo Muñoz, Ilkka Saarnilehto, Tuukka Rouhiainen and Kalaiarasan Saminathan
-School project for course Mobile Cloud Computing.
 
 ## Build
 
