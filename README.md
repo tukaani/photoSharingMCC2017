@@ -1,4 +1,4 @@
-# PhotoOrganizer, School project for course Mobile Cloud Computing.
+# PhotoOrganizer – Event-based picture sharing app. School project for course the Mobile Cloud Computing.
 
 by Olli Kiljunen, Edga Pardo Muñoz, Ilkka Saarnilehto, Tuukka Rouhiainen and Kalaiarasan Saminathan
 
